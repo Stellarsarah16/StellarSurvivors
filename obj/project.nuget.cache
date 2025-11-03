@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "fo8nvqrh4ck=",
+  "success": true,
+  "projectFilePath": "F:\\DevFolder\\CSharpProjects\\firstGame\\StellarSurvivors\\StellarSurvivors\\StellarSurvivors.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\sara\\.nuget\\packages\\raylib-cs\\7.0.2\\raylib-cs.7.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
