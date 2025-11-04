@@ -4,6 +4,7 @@ using StellarSurvivors.Core;
 public class PhysicsSystem: IUpdateSystem
 {
     private EntityManager _entityManager;
+    private static float _gravity = 9.81f;
 
     public PhysicsSystem(EntityManager entityManager)
     {
@@ -26,6 +27,7 @@ public class PhysicsSystem: IUpdateSystem
                 
                 // Optional: Apply damping/friction
                 velocity.Velocity *= 0.995f; 
+                transform.Position.Y += _gravity * deltaTime;
 
                 // Write the changes back
                 _entityManager.Transforms[entityId] = transform;

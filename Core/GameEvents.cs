@@ -26,7 +26,7 @@ namespace StellarSurvivors.Core
         public Vector2 PodPosition;
     }
 
-    public struct EnterPodEvent : IEvent
+    public struct ReturnToPodEvent : IEvent
     {
         public int SpacemanId;
         public int PodId;
@@ -54,5 +54,21 @@ namespace StellarSurvivors.Core
         {
             Direction = direction;
         }
+    }
+    
+    // In your EventManager.cs
+    public struct CollisionEvent : IEvent
+    {
+        public int EntityA;
+        public int EntityB;
+    }
+
+// In your EventManager.cs
+    public struct WorldCollisionEvent : IEvent
+    {
+        public int EntityId;
+        public int TileX;
+        public int TileY;
+        public TileType TileType;
     }
 }

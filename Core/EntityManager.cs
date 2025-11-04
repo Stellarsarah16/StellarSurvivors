@@ -1,4 +1,6 @@
-﻿namespace StellarSurvivors.Core;
+﻿using System.Numerics;
+
+namespace StellarSurvivors.Core;
 using StellarSurvivors.Components;
 
 public class EntityManager
@@ -15,8 +17,15 @@ public class EntityManager
     public Dictionary<int, MotherShipComponent> MotherShips;
     public Dictionary<int, PodComponent> Pods;
     public Dictionary<int, SpacemanComponent> Spacemen;
-    
+    public Dictionary<int, ColliderComponent> Colliders;
     public HashSet<int> Players {get; private set;}
+    
+    //Reference to singleton entityIDs
+    private int _podId;
+    private Vector2 _podPosition;
+    private int _mothershipId;
+    private Vector2 _mothershipPosition;
+    private int SpacemanId;
     
     public  EntityManager()
     {
@@ -30,7 +39,7 @@ public class EntityManager
         DestroyTags = new Dictionary<int, DestroyComponent>();
         Pods = new Dictionary<int, PodComponent>();
         Spacemen = new Dictionary<int, SpacemanComponent>();
-
+        Colliders  = new Dictionary<int, ColliderComponent>();
         Players = new HashSet<int>();
     }
     
@@ -38,5 +47,35 @@ public class EntityManager
         // Get the current ID and Increment
         int newId = _nextEntityId++;
         return newId;
+    }
+
+    public void SetPodId(int podId)
+    {
+        _podId = podId;
+    }
+
+    public int GetPodId()
+    {
+        return _podId;
+    }
+    
+    public void SetMothershipId(int mothershipId)
+    {
+        _mothershipId = mothershipId;
+    }
+
+    public void DestroyEntity(int entityId)
+    {
+        Transforms.Remove(entityId);
+        Renderables.Remove(entityId);
+        Spacemen.Remove(entityId);
+        Colliders.Remove(entityId);
+        PlayerInputs.Remove(entityId);
+        Velocities.Remove(entityId);
+        DestroyTags.Remove(entityId);
+        Pods.Remove(entityId);
+        Players.Remove(entityId);
+    
+        System.Console.WriteLine($"Destroyed entity: {entityId}");
     }
 }

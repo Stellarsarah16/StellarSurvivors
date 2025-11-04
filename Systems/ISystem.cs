@@ -7,4 +7,5 @@ namespace StellarSurvivors.Systems
 
         public void Update(Game world, float deltaTime);
     }
+    
 }

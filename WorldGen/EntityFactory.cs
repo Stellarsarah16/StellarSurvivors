@@ -27,7 +27,7 @@ public class EntityFactory
     }
 
     // This is the main method!
-    public int CreateEntity(string blueprintId, BlueprintSettings settings)
+    public int CreateMapEntity(string blueprintId, BlueprintSettings settings)
     {
         if (!_blueprints.ContainsKey(blueprintId))
         {

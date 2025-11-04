@@ -16,10 +16,13 @@ namespace StellarSurvivors.Core
         private int _screenHeight;
         
         private StateManager _stateManager;
+        public Camera2D Camera;
         
         public EventManager EventManager { get; private set; }
         public EntityManager EntityManager { get; private set; }
-        public GameData gameData {get; private set;}
+        public GameData GameData {get; private set;}
+
+        public WorldData WorldData;
         public List<IGenerator> Generators {get; private set;}
 
         
@@ -28,7 +31,9 @@ namespace StellarSurvivors.Core
             EventManager = new EventManager();
             _stateManager = new StateManager();
             EntityManager  = new EntityManager();
-            gameData = new GameData();
+            GameData = new GameData();
+            WorldData = new WorldData(_screenWidth, _screenHeight, -600);
+            
             
             this._screenWidth = width;
             this._screenHeight = height;
@@ -74,7 +79,8 @@ namespace StellarSurvivors.Core
             EntityManager.Velocities.Add(entityId, new VelocityComponent { Velocity = Vector2.Zero });
             EntityManager.PlayerInputs.Add(entityId, new PlayerInputComponent { Speed = 5.0f });
             EntityManager.Healths.Add(entityId, new HealthComponent(100));
-            EntityManager.Pods.Add(entityId, new PodComponent { rotationSpeed = 10f, thrustForce = 40f, thrustEnergyDrain = 5f});
+            EntityManager.Colliders.Add(entityId, new ColliderComponent { Radius = 16f });
+            EntityManager.Pods.Add(entityId, new PodComponent { rotationSpeed = 10f, thrustForce = 100f, thrustEnergyDrain = 5f});
             
             EntityManager.Players.Add(entityId);
             return entityId;    
@@ -91,6 +97,7 @@ namespace StellarSurvivors.Core
             EntityManager.Velocities.Add(entityId, new VelocityComponent { Velocity = Vector2.Zero });
             EntityManager.PlayerInputs.Add(entityId, new PlayerInputComponent { Speed = 5.0f });
             EntityManager.Healths.Add(entityId, new HealthComponent(100));
+            EntityManager.Colliders.Add(entityId, new ColliderComponent { Radius = 10f });
             Vector2 podPosition = new Vector2(position.X, position.Y);
             EntityManager.Spacemen.Add(entityId, new SpacemanComponent(podPosition, podId));
             

@@ -67,7 +67,6 @@ namespace StellarSurvivors.Systems
 
                 if (Raylib.IsKeyDown(KeyboardKey.Space)) //Thrust
                 {
-                    System.Console.WriteLine(transform.Position.X);
                     _eventManager.Publish(new ThrustInputEvent());
                 }
 

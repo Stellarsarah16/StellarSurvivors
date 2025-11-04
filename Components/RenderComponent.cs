@@ -12,4 +12,5 @@ public struct RenderComponent
     
     //public Texture2D Texture;
     //public Rectangle SourceRect;
+
 }

@@ -48,12 +48,12 @@ public class PodControlSystem : IUpdateSystem
         var pod = _entityManager.Pods[controlledEntityId];
         var transform = _entityManager.Transforms[controlledEntityId];
         var velocity = _entityManager.Velocities[controlledEntityId]; // Assuming you have this
+        var render = _entityManager.Renderables[controlledEntityId]; 
         
         // Apply Rotation Logic
         if (_rotationInput != 0)
         {
             transform.Rotation += _rotationInput * pod.rotationSpeed * deltaTime;
-            System.Console.WriteLine(transform.Rotation);
         }
 
         // --- APPLY THRUST LOGIC ---

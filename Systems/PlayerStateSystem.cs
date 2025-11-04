@@ -23,19 +23,19 @@ public class PlayerStateSystem
         
         // Listen for the *specific* event we're about to publish
         eventManager.Subscribe<ExitPodEvent>(OnExitPod);
+        eventManager.Subscribe<ReturnToPodEvent>(OnReturnToPod);
     }
 
     // 1. 'E' was pressed. Decide what to do.
+// In PlayerStateSystem.cs
     private void OnUsePressed(UseButtonPressedEvent e)
     {
         if (_entityManager.PlayerInputs.Count == 0) return;
         int controlledEntityId = _entityManager.PlayerInputs.Keys.First();
 
-        // If we are controlling a Pod...
+        // Logic for Pod (Your existing code is good)
         if (_entityManager.Pods.ContainsKey(controlledEntityId))
         {
-            // ...then 'E' means "Exit Pod".
-            // Publish a new, more specific event.
             var transform = _entityManager.Transforms[controlledEntityId];
             Vector2 pos = new Vector2(transform.Position.X, transform.Position.Y);
             _eventManager.Publish(new ExitPodEvent 
@@ -44,26 +44,55 @@ public class PlayerStateSystem
                 PodPosition = pos 
             });
         }
-        // If we are controlling a Spaceman...
+        // Logic for Spaceman (This is the new part)
         else if (_entityManager.Spacemen.ContainsKey(controlledEntityId))
         {
-            // ...then 'E' means "Enter Pod".
-            // TODO: Check if near pod
-            // _eventManager.Publish(new EnterPodEvent { ... });
+            // 1. Get the Pod's ID (from the method you mentioned)
+            int podId = _entityManager.GetPodId(); 
+
+            // 2. Get both positions
+            var spacemanTransform = _entityManager.Transforms[controlledEntityId];
+            var podTransform = _entityManager.Transforms[podId];
+        
+            Vector2 spacemanPos = new Vector2(spacemanTransform.Position.X, spacemanTransform.Position.Y);
+            Vector2 podPos = new Vector2(podTransform.Position.X, podTransform.Position.Y);
+
+            // 3. Check the distance
+            float distance = Vector2.Distance(spacemanPos, podPos);
+            float reEntryRadius = 32f; // How close they need to be (e.g., 32 pixels)
+
+            // 4. ONLY publish if close enough
+            if (distance < reEntryRadius)
+            {
+                _eventManager.Publish(new ReturnToPodEvent
+                {
+                    SpacemanId = controlledEntityId,
+                    PodId = podId
+                });
+            }
         }
     }
 
     // 2. The 'ExitPodEvent' was published. Do the logic.
     private void OnExitPod(ExitPodEvent e)
     {
+        System.Console.WriteLine($"Exit pod: {e.PodId}");
+        _world.EntityManager.SetPodId(e.PodId);
         _entityManager.PlayerInputs.Remove(e.PodId);
         _entityManager.Players.Remove(e.PodId);
         
         
         Vector3 podPosition = new Vector3(e.PodPosition.X, e.PodPosition.Y, 0);
         int spacemanId = _world.CreateSpaceman(e.PodId, podPosition, new Vector2(16,16), Color.Orange);
+    }
+    
+    private void OnReturnToPod(ReturnToPodEvent e) {
+        System.Console.WriteLine($"Return to pod: {e.PodId}");
+        _entityManager.PlayerInputs.Remove(e.SpacemanId);
+        _entityManager.Players.Remove(e.SpacemanId);
+        _entityManager.PlayerInputs.Add(e.PodId, new PlayerInputComponent { Speed = 5.0f });
+        _entityManager.Players.Add(e.PodId);
         
-        
-        
+        _entityManager.DestroyEntity(e.SpacemanId);
     }
 }
