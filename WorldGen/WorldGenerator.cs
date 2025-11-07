@@ -41,8 +41,8 @@ public class WorldGenerator
         AddStep(new CaveGenerationStep());
         AddStep(new MineralGenerationStep(_random, 0.01, 0.003));
         
-        int mapWidth = 200;
-        int mapHeight = 200;
+        int mapWidth = 1000;
+        int mapHeight = 400;
         world.WorldData = Generate(world.WorldData, mapWidth, mapHeight, seed);
         
         // Tile Creation Loop
@@ -141,7 +141,7 @@ public class WorldGenerator
     private Vector3 PlaceMotherShip(WorldData worldData)
     {
         // 1. Define ship properties
-        Vector2 shipSize = new Vector2(64, 48);
+        Vector2 shipSize = new Vector2(96, 64);
         int shipWidthInTiles = (int)Math.Ceiling(shipSize.X / _tileSize);
 
         // 2. Set default spawn position (fallback if no spot is found)

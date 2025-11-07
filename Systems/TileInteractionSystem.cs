@@ -29,7 +29,7 @@ namespace StellarSurvivors.Systems
             int y = (int)((mouseWorldPos.Y - _worldData.Yoffset) / TILE_SIZE);
             Point hoveredTile = new Point(x, y);
             
-            System.Console.WriteLine($"Hovering tile: [{hoveredTile.X}, {hoveredTile.Y}]");
+            //System.Console.WriteLine($"Hovering tile: [{hoveredTile.X}, {hoveredTile.Y}]");
             
             return hoveredTile;
         }
@@ -53,7 +53,7 @@ namespace StellarSurvivors.Systems
                 if (hoveredTileType != TileType.None)
                 {
                     _worldData.SelectedTile = hoveredTile;
-                    System.Console.WriteLine($"Selected tile: [{hoveredTile.X}, {hoveredTile.Y}]");
+                    //System.Console.WriteLine($"Selected tile: [{hoveredTile.X}, {hoveredTile.Y}]");
                 }
             }
             // --- LOGIC 2: A tile IS selected. Try to move. ---
@@ -68,7 +68,7 @@ namespace StellarSurvivors.Systems
                     // Check 2: Is the target tile "nearby" (1-tile radius)?
                     int deltaX = Math.Abs(selectedTile.X - hoveredTile.X);
                     int deltaY = Math.Abs(selectedTile.Y - hoveredTile.Y);
-
+                    
                     if (deltaX <= 1 && deltaY <= 1)
                     {
                         // --- SUCCESS! Perform the move ---

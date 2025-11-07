@@ -45,10 +45,12 @@ namespace StellarSurvivors.WorldGen.Steps
             // --- 1. Create the Surface Entrance ---
             // Find a random spot on the surface (not too close to the edge)
             int entranceX = _random.Next(worldData.Width / 4, worldData.Width * 3 / 4);
+            int entranceX2 = _random.Next(worldData.Width / 4, worldData.Width * 3 / 4);
             int entranceY = worldData.SurfaceHeightMap[entranceX] + 1; // Start just below the grass
             
             // Add a special walker with a long life and a bias to dig DOWN
             walkers.Add(new Walker(entranceX, entranceY, WalkerLifetime *2, 0.1));
+            walkers.Add(new Walker(entranceX2, entranceY, WalkerLifetime *3, 0.3));
 
             // --- 2. Create the Deep Caves ---
             for (int i = 0; i < NumWalkers; i++)

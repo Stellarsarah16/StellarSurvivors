@@ -8,7 +8,7 @@ namespace StellarSurvivors
         public static void Main()
         {
 
-            Game gameInstance = new Game(1600, 600);
+            Game gameInstance = new Game(2400, 1800);
 
             gameInstance.Run();
         }
