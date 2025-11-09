@@ -44,10 +44,9 @@ namespace StellarSurvivors.Core
         public void Run()
         {
             // Initialization
-            
             Raylib.InitWindow(_screenWidth, _screenHeight, "Game Engine");
             Raylib.SetWindowPosition(0, 0);
-            Raylib.SetTargetFPS(60);
+            //Raylib.SetTargetFPS(60);
             
             _stateManager.PushState(new MainMenuState(this, _screenWidth, _screenHeight), this);
 
@@ -80,8 +79,9 @@ namespace StellarSurvivors.Core
             EntityManager.PlayerInputs.Add(entityId, new PlayerInputComponent { Speed = 5.0f });
             EntityManager.Healths.Add(entityId, new HealthComponent(100));
             EntityManager.Colliders.Add(entityId, new ColliderComponent { Radius = 16f });
-            EntityManager.Pods.Add(entityId, new PodComponent { rotationSpeed = 10f, thrustForce = 100f, thrustEnergyDrain = 5f});
-            
+            EntityManager.Pods.Add(entityId, new PodComponent { rotationSpeed = 10f, thrustForce = 100f, thrustEnergyDrain = 2f});
+            EntityManager.Fuels.Add(entityId, new FuelComponent { CurrentFuel = 100f, RechargeRate = 2f, FuelCapacity = 100f});
+            EntityManager.AddEntityToChunk(entityId, position);
             EntityManager.Players.Add(entityId);
             return entityId;    
         }
@@ -99,7 +99,9 @@ namespace StellarSurvivors.Core
             EntityManager.Healths.Add(entityId, new HealthComponent(100));
             EntityManager.Colliders.Add(entityId, new ColliderComponent { Radius = 10f });
             Vector2 podPosition = new Vector2(position.X, position.Y);
-            EntityManager.Spacemen.Add(entityId, new SpacemanComponent(podPosition, podId));
+            EntityManager.Fuels.Add(entityId, new FuelComponent { CurrentFuel = 40f, RechargeRate = 0f, FuelCapacity = 40f});
+            EntityManager.Spacemen.Add(entityId, new SpacemanComponent(300, 150, 2, podPosition, podId));
+            EntityManager.AddEntityToChunk(entityId, position);
             
             EntityManager.Players.Add(entityId);
             return entityId;    
@@ -112,13 +114,10 @@ namespace StellarSurvivors.Core
             EntityManager.Transforms.Add(entityId, new TransformComponent { Position = position, Rotation = 0.0f, Scale = new Vector3(1,1,1)});
             EntityManager.Renderables.Add(entityId, new RenderComponent { Size = size, Color = color, Layer = RenderLayer.Entities});
             EntityManager.MotherShips.Add(entityId, new MotherShipComponent(80, 100, 120, 80));
+            
+            EntityManager.AddEntityToChunk(entityId, position);
             return entityId;
         }
         
-
-        public void RemoveEntity(int entityId)
-        {
-            // ... all your Remove() calls
-        }
     }
 }

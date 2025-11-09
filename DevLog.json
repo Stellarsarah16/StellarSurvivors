@@ -1,0 +1,32 @@
+﻿[ 
+{
+  "timestamp": "",
+  "type": "",
+  "system": "",
+  "message": "",
+  "context": ""
+},
+
+{
+  "timestamp": "11/05/2025",
+  "type": "game_data",
+  "system": "SpacialMap - chunk system",
+  "message": "Entities belong to a chunk.  only entities that belong to chunks in range of player get processed",
+  "context": "EntityManager.SpacialMap, EntityManager._entityChunkCache, UpdateEntityChunk"
+},
+
+{
+  "timestamp": "11/07/2025",
+  "type": "game_mechanic",
+  "system": "fuel_system",
+  "message": "Pod and Spaceman both lose fuel when thrust is applied.  Slowly regain fuel passively.",
+  "context": "FuelComponent, EntityManager.Fuels, FuelSystem, PodControlSystem, SpacemanControlSystem"
+},
+{
+  "timestamp": "11/08/2025",
+  "type": "world_data",
+  "system": "TileDefinition",
+  "message": "A repository on WorldData that maps tile attributes to the tile type.  aka friction, isSolid, isFlammable",
+  "context": "WorldData, TileType, TileDefinition"
+}
+]

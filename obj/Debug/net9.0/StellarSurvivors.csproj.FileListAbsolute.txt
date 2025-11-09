@@ -20,3 +20,4 @@ F:\DevFolder\CSharpProjects\firstGame\StellarSurvivors\StellarSurvivors\obj\Debu
 F:\DevFolder\CSharpProjects\firstGame\StellarSurvivors\StellarSurvivors\obj\Debug\net9.0\StellarSurvivors.pdb
 F:\DevFolder\CSharpProjects\firstGame\StellarSurvivors\StellarSurvivors\obj\Debug\net9.0\StellarSurvivors.genruntimeconfig.cache
 F:\DevFolder\CSharpProjects\firstGame\StellarSurvivors\StellarSurvivors\obj\Debug\net9.0\ref\StellarSurvivors.dll
+F:\DevFolder\CSharpProjects\firstGame\StellarSurvivors\StellarSurvivors\obj\Debug\net9.0\StellarSurvivors.sourcelink.json

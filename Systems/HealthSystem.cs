@@ -17,21 +17,21 @@ namespace StellarSurvivors.Systems
             {
                 var health = world.EntityManager.Healths[entityId];
 
-                // 1. Is there any damage in the buffer?
+                //  Is there any damage in the buffer?
                 if (health.DamageToApply.Count > 0)
                 {
-                    // 2. Apply the damage
+                    // Apply the damage
                     int totalDamage = health.DamageToApply.Sum();
                     health.CurrentHealth -= totalDamage;
 
-                    // 3. Clear the buffer so we don't apply damage twice
+                    // Clear the buffer so we don't apply damage twice
                     health.DamageToApply.Clear();
 
                     // Optional: Log the hit
                     // System.Console.WriteLine($"Entity {entityId} took {totalDamage} damage. Health: {health.CurrentHealth}");
                 }
 
-                // 4. Check for death
+                //  Check for death
                 if (health.CurrentHealth <= 0)
                 {
                     // Don't destroy it yet! Just add it to the list.

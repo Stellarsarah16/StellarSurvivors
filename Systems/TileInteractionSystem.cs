@@ -10,28 +10,11 @@ namespace StellarSurvivors.Systems
     {
         private WorldData _worldData;
         private const int TILE_SIZE = 16; // Make sure this matches!
+        private readonly float _selectableRange = 124f;
 
         public TileInteractionSystem(WorldData worldData)
         {
             _worldData = worldData;
-        }
-
-        // --- Helper to get the tile under the mouse ---
-        private Point GetHoveredTile(Camera2D camera)
-        {
-            // 1. Get mouse position in SCREEN space
-            Vector2 mouseScreenPos = Raylib.GetMousePosition();
-            
-            // 2. Convert to WORLD space
-            Vector2 mouseWorldPos = Raylib.GetScreenToWorld2D(mouseScreenPos, camera);
-            // 3. Convert to TILE index (using your offset logic)
-            int x = (int)(mouseWorldPos.X / TILE_SIZE);
-            int y = (int)((mouseWorldPos.Y - _worldData.Yoffset) / TILE_SIZE);
-            Point hoveredTile = new Point(x, y);
-            
-            //System.Console.WriteLine($"Hovering tile: [{hoveredTile.X}, {hoveredTile.Y}]");
-            
-            return hoveredTile;
         }
 
         public void Update(Game world, float deltaTime)
@@ -39,52 +22,92 @@ namespace StellarSurvivors.Systems
             int playerId = world.EntityManager.Players.First();
             if (!world.EntityManager.Spacemen.ContainsKey(playerId))
             {
+                _worldData.HoveredTile = null;
+                _worldData.SelectedTile = null;
                 return;
             }
+            
             Camera2D camera = world.Camera;
-
+            Vector2 playerPosition = camera.Target;
             Point hoveredTile = GetHoveredTile(camera);
+            Vector2 hoveredWorldPosition = GetWorldPosFromTile(hoveredTile);
+            float distanceToPlayer = Vector2.Distance(playerPosition, hoveredWorldPosition);
             TileType hoveredTileType = _worldData.GetTileType(hoveredTile.X, hoveredTile.Y);
 
-            // --- LOGIC 1: Nothing is selected. Try to select. ---
+            _worldData.HoveredTile = null;  // Clear Each frame
+            
+            bool isClick = Raylib.IsMouseButtonPressed(MouseButton.Left);
+
+            // --- 4. STATE MACHINE ---
+
+            // ====== STATE 1: No tile is selected (Looking to pick one up) ======
             if (_worldData.SelectedTile == null)
             {
-                // We can't select air
-                if (hoveredTileType != TileType.None)
+                // Is the hovered tile in range AND not empty?
+                if (distanceToPlayer <= _selectableRange && hoveredTileType != TileType.None)
                 {
-                    _worldData.SelectedTile = hoveredTile;
-                    //System.Console.WriteLine($"Selected tile: [{hoveredTile.X}, {hoveredTile.Y}]");
+                    // If so, highlight it
+                    _worldData.HoveredTile = hoveredTile;
+
+                    // If we click the highlighted tile, select it
+                    if (isClick)
+                    {
+                        _worldData.SelectedTile = hoveredTile;
+                        _worldData.HoveredTile = null; // Clear highlight
+                    }
                 }
             }
-            // --- LOGIC 2: A tile IS selected. Try to move. ---
             else
             {
                 Point selectedTile = _worldData.SelectedTile.Value;
-                TileType selectedTileType = _worldData.GetTileType(selectedTile.X, selectedTile.Y);
 
-                // Check 1: Is the target tile (hovered) empty?
-                if (hoveredTileType == TileType.None)
+                // Is the hovered tile in range AND empty?
+                if (distanceToPlayer <= _selectableRange && hoveredTileType == TileType.None)
                 {
-                    // Check 2: Is the target tile "nearby" (1-tile radius)?
-                    int deltaX = Math.Abs(selectedTile.X - hoveredTile.X);
-                    int deltaY = Math.Abs(selectedTile.Y - hoveredTile.Y);
-                    
-                    if (deltaX <= 1 && deltaY <= 1)
+                    // If so, highlight it as a valid "drop target"
+                    _worldData.HoveredTile = hoveredTile;
+
+                    // If we click this valid drop target...
+                    if (isClick)
                     {
-                        // --- SUCCESS! Perform the move ---
-                        System.Console.WriteLine($"Moving tile from {selectedTile} to {hoveredTile}");
-                        
-                        // 1. Place the selected tile in the new empty spot
+                        // 1. Get the type of the tile we're "holding"
+                        TileType selectedTileType = _worldData.GetTileType(selectedTile.X, selectedTile.Y);
+
+                        // 2. "Move" it by swapping the tile data
                         _worldData.SetTileType(hoveredTile.X, hoveredTile.Y, selectedTileType);
-                        
-                        // 2. Make the old spot empty
                         _worldData.SetTileType(selectedTile.X, selectedTile.Y, TileType.None);
+
+                        // 3. Clear all state
+                        _worldData.SelectedTile = null;
+                        _worldData.HoveredTile = null;
                     }
                 }
-                
-                // Finally, deselect the tile, whether the move was successful or not
-                _worldData.SelectedTile = null;
+
+                // If we click anywhere else (on a wall, out of range, etc.)...
+                else if (isClick)
+                {
+                    // ...just cancel the selection and drop the tile.
+                    _worldData.SelectedTile = null;
+                }
             }
+        }
+        
+        // --- Helper to get the tile under the mouse ---
+        private Point GetHoveredTile(Camera2D camera)
+        {
+            Vector2 mouseScreenPos = Raylib.GetMousePosition();
+            Vector2 mouseWorldPos = Raylib.GetScreenToWorld2D(mouseScreenPos, camera);
+            int x = (int)(mouseWorldPos.X / TILE_SIZE);
+            int y = (int)((mouseWorldPos.Y - _worldData.Yoffset) / TILE_SIZE);
+            return new Point(x, y);
+        }
+        
+        private Vector2 GetWorldPosFromTile(Point tile)
+        {
+            return new Vector2(
+                (tile.X * TILE_SIZE) + (TILE_SIZE / 2f), // Get center of tile
+                (tile.Y * TILE_SIZE) + _worldData.Yoffset + (TILE_SIZE / 2f)
+            );
         }
     }
 }

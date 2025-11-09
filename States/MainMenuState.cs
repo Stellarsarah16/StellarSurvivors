@@ -15,9 +15,7 @@ namespace StellarSurvivors.States
         private int _screenWidth;
         private int _screenHeight;
         
-        // --- NEW FIELDS ---
-        // This is our new "source of truth" for what's selected.
-        // 0 = Play, 1 = Quit
+        // Selectd Index:  0 = Play, 1 = Quit
         private int _selectedButtonIndex = 0;
         private int _buttonCount = 2;
 

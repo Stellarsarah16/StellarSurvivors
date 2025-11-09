@@ -1,21 +1,18 @@
-﻿using System.IO.Enumeration;
-
-namespace StellarSurvivors.Systems;
+﻿namespace StellarSurvivors.Systems;
+using System.IO.Enumeration;
 using Raylib_cs; // For Vector2
 using System;
 using System.Numerics;
 using System.Collections.Generic;
 using StellarSurvivors.Core;
 
-public class CollisionSystem : IUpdateSystem
+public class CollisionSystem
 {
     private EntityManager _entityManager;
     private EventManager _eventManager;
-    private WorldData _mapData; // We need the map for world collisions
+    private WorldData _mapData;
     private int[,] _tileMap;
-
-    // We need to know the tile size. You might store this elsewhere.
-    private const int TILE_SIZE = 16; 
+    private const int TILE_SIZE = 16;
 
     public CollisionSystem(EntityManager em, EventManager ev, WorldData map)
     {
@@ -25,174 +22,198 @@ public class CollisionSystem : IUpdateSystem
         _tileMap = map.TileMap;
     }
 
-    public void Update(Game world,  float deltaTime)
+    // You will need to refactor your main loop to call UpdateX and UpdateY
+    // instead of the old Update() method.
+    
+    // You can keep your Entity-vs-Entity check here if you want.
+    public void UpdateEntityCollisions()
     {
-        // Get all collidable entities
-        var collidableEntities = new List<int>(_entityManager.Colliders.Keys);
-        
-        // --- 1. Entity-vs-Entity (N^2 check) ---
-        // This is fine for a few entities, but slow for hundreds
-        for (int i = 0; i < collidableEntities.Count; i++)
-        {
-            int entityAId = collidableEntities[i];
+        // ... (Your original entity-vs-entity AABB or Circle checks)
+    }
 
-            for (int j = i + 1; j < collidableEntities.Count; j++)
-            {
-                int entityBId = collidableEntities[j];
-
-                // Run the check
-                if (CheckEntityCollision(entityAId, entityBId))
-                {
-                    // Publish an event so other systems can react
-                    _eventManager.Publish(new CollisionEvent 
-                    { 
-                        EntityA = entityAId, 
-                        EntityB = entityBId 
-                    });
-                }
-            }
-        }
-
-        // --- 2. Entity-vs-World ---
-        // We only check entities that can move
-        foreach (int entityId in collidableEntities)
+    /// <summary>
+    /// Call this AFTER you move the entity on its X-axis.
+    /// </summary>
+    public void UpdateX(float deltaTime)
+    {
+        foreach (int entityId in _entityManager.Colliders.Keys)
         {
             if (_entityManager.Pods.ContainsKey(entityId) || _entityManager.Spacemen.ContainsKey(entityId))
             {
-                CheckWorldCollision(entityId);
+                CheckWorldCollisionX(entityId);
             }
         }
     }
 
     /// <summary>
-    /// Checks for Circle-vs-Circle collision between two entities.
+    /// Call this AFTER you move the entity on its Y-axis.
     /// </summary>
-    private bool CheckEntityCollision(int entityAId, int entityBId)
+    public void UpdateY(float deltaTime)
     {
-        // Make sure both entities still exist
-        if (!_entityManager.Transforms.ContainsKey(entityAId) || 
-            !_entityManager.Transforms.ContainsKey(entityBId))
+        foreach (int entityId in _entityManager.Colliders.Keys)
         {
-            return false;
+            if (_entityManager.Pods.ContainsKey(entityId) || _entityManager.Spacemen.ContainsKey(entityId))
+            {
+                CheckWorldCollisionY(entityId);
+            }
         }
-
-        var transformA = _entityManager.Transforms[entityAId];
-        var colliderA = _entityManager.Colliders[entityAId];
-        
-        var transformB = _entityManager.Transforms[entityBId];
-        var colliderB = _entityManager.Colliders[entityBId];
-
-        // We only care about 2D position
-        Vector2 posA = new Vector2(transformA.Position.X, transformA.Position.Y);
-        Vector2 posB = new Vector2(transformB.Position.X, transformB.Position.Y);
-
-        // 1. Get the distance between centers
-        float distance = Vector2.Distance(posA, posB);
-
-        // 2. Get the sum of their radii
-        float sumOfRadii = colliderA.Radius + colliderB.Radius;
-
-        // 3. If distance is less than sum of radii, they overlap
-        return distance < sumOfRadii;
     }
 
-    /// <summary>
-    /// Checks for Circle-vs-Solid-Tile collision and resolves it.
-    /// </summary>
-    
-    private void CheckWorldCollision(int entityId)
-{
-    var transform = _entityManager.Transforms[entityId];
-    var collider = _entityManager.Colliders[entityId];
-    
-    Vector2 pos = new Vector2(transform.Position.X, transform.Position.Y);
-    float radius = collider.Radius;
-    
-    // 1. Find tile coordinates (This part is now correct)
-    int minTileX = (int)((pos.X - radius) / TILE_SIZE);
-    int maxTileX = (int)((pos.X + radius) / TILE_SIZE);
-    int minTileY = (int)((pos.Y - _mapData.Yoffset - radius) / TILE_SIZE);
-    int maxTileY = (int)((pos.Y - _mapData.Yoffset + radius) / TILE_SIZE);
-
-    for (int y = minTileY; y <= maxTileY; y++)
+    // --- NEW X-AXIS RESOLUTION ---
+    private void CheckWorldCollisionX(int entityId)
     {
-        for (int x = minTileX; x <= maxTileX; x++)
-        {
-            TileType tileType = _mapData.GetTileType(x, y);
+        var transform = _entityManager.Transforms[entityId];
+        var collider = _entityManager.Colliders[entityId];
 
-            if (IsTileSolid(tileType))
+        Vector2 pos = new Vector2(transform.Position.X, transform.Position.Y) ;
+        float radius = collider.Radius;
+
+        // Get the entity's AABB for broadphase
+        int minTileX = (int)((pos.X - radius) / TILE_SIZE);
+        int maxTileX = (int)((pos.X + radius) / TILE_SIZE);
+        int minTileY = (int)((pos.Y - _mapData.Yoffset - radius) / TILE_SIZE);
+        int maxTileY = (int)((pos.Y - _mapData.Yoffset + radius) / TILE_SIZE);
+
+        for (int y = minTileY; y <= maxTileY; y++)
+        {
+            for (int x = minTileX; x <= maxTileX; x++)
             {
-                
-                // 4. --- Narrowphase: Circle-vs-Square ---
-                // Find the tile's AABB in the *correct* coordinate space
+                TileType tileType = _mapData.GetTileType(x, y);
+                //if (!IsTileSolid(tileType)) continue;
+                if (!_mapData.GetTileDef(tileType).IsSolid) continue;
+
+                // Get tile AABB
                 float tileMinX = x * TILE_SIZE;
                 float tileMaxX = tileMinX + TILE_SIZE;
-                
-                // --- FIX #1: Apply the yOffset to the tile's world position ---
-                float tileMinY = (y * TILE_SIZE) + _mapData.Yoffset; 
+                float tileMinY = (y * TILE_SIZE) + _mapData.Yoffset;
                 float tileMaxY = tileMinY + TILE_SIZE;
 
-                // 5. Find the closest point
+                // Check for overlap (Circle vs AABB)
                 float closestX = Math.Clamp(pos.X, tileMinX, tileMaxX);
                 float closestY = Math.Clamp(pos.Y, tileMinY, tileMaxY);
                 Vector2 closestPoint = new Vector2(closestX, closestY);
+                float distanceSq = Vector2.DistanceSquared(pos, closestPoint);
 
-                // 6. Check distance
-                float distance = Vector2.Distance(pos, closestPoint);
-
-
-                if (distance < radius)
+                if (distanceSq < radius * radius)
                 {
-                    // --- COLLISION! ---
+                    // COLLISION! Now, resolve *only* on the X-axis.
                     
-                    // 1. Calculate pushback (applies to both pod and spaceman)
-                    float penetration = radius - distance;
-                    Vector2 normal = Vector2.Normalize((pos - closestPoint) + new Vector2(0.001f)); 
-                    
-                    transform.Position.X += normal.X * penetration;
-                    transform.Position.Y += normal.Y * penetration;
+                    // Find X penetration
+                    float overlapLeft = (pos.X + radius) - tileMinX;
+                    float overlapRight = tileMaxX - (pos.X - radius);
 
-                    // --- FIX #2: Only modify velocity if the entity HAS it ---
-                    if (_entityManager.Velocities.ContainsKey(entityId))
+                    // We are only interested in the *smallest* overlap
+                    if (overlapLeft < 0 || overlapRight < 0) continue; // Should be impossible if distance check passed, but good sanity check
+
+                    float penetration = Math.Min(overlapLeft, overlapRight);
+                    
+                    // If we are overlapping, push out along the shallowest axis
+                    if (penetration == overlapLeft)
                     {
-                        var velocity = _entityManager.Velocities[entityId];
-
-                        // Project the velocity onto the collision normal (the pushback direction)
-                        float dot = Vector2.Dot(velocity.Velocity, normal);
-
-                        // We only want to remove velocity that's heading *into* the wall (dot < 0)
-                        if (dot < 0)
-                        {
-                            // Remove the velocity component that is penetrating the wall
-                            velocity.Velocity -= normal * dot;
-                        }
-
-                        _entityManager.Velocities[entityId] = velocity;
+                        // Pushed to the left
+                        transform.Position.X -= penetration;
+                    }
+                    else
+                    {
+                        // Pushed to the right
+                        transform.Position.X += penetration;
                     }
 
-                    // Write the transform back (applies to both)
+                    // Stop X-axis velocity
+                    if (_entityManager.Velocities.TryGetValue(entityId, out var velocity))
+                    {
+                        velocity.Velocity.X = 0;
+                        _entityManager.Velocities[entityId] = velocity;
+                    }
+                    
                     _entityManager.Transforms[entityId] = transform;
-
-                    // Publish an event
-                    _eventManager.Publish(new WorldCollisionEvent 
-                    { 
-                        EntityId = entityId, 
-                        TileX = x, 
-                        TileY = y,
-                        TileType = tileType
-                    });
-
+                    PublishWorldCollision(entityId, x, y, tileType);
                 }
             }
         }
     }
-}
     
-    /// <summary>
-    /// Helper method to define what's solid.
-    /// </summary>
+    // --- NEW Y-AXIS RESOLUTION ---
+    private void CheckWorldCollisionY(int entityId)
+    {
+        var transform = _entityManager.Transforms[entityId];
+        var collider = _entityManager.Colliders[entityId];
+
+        Vector2 pos = new Vector2(transform.Position.X, transform.Position.Y);
+        float radius = collider.Radius;
+
+        int minTileX = (int)((pos.X - radius) / TILE_SIZE);
+        int maxTileX = (int)((pos.X + radius) / TILE_SIZE);
+        int minTileY = (int)((pos.Y - _mapData.Yoffset - radius) / TILE_SIZE);
+        int maxTileY = (int)((pos.Y - _mapData.Yoffset + radius) / TILE_SIZE);
+
+        for (int y = minTileY; y <= maxTileY; y++)
+        {
+            for (int x = minTileX; x <= maxTileX; x++)
+            {
+                TileType tileType = _mapData.GetTileType(x, y);
+                //if (!IsTileSolid(tileType)) continue;
+                if (!_mapData.GetTileDef(tileType).IsSolid) continue;
+
+                float tileMinX = x * TILE_SIZE;
+                float tileMaxX = tileMinX + TILE_SIZE;
+                float tileMinY = (y * TILE_SIZE) + _mapData.Yoffset;
+                float tileMaxY = tileMinY + TILE_SIZE;
+
+                float closestX = Math.Clamp(pos.X, tileMinX, tileMaxX);
+                float closestY = Math.Clamp(pos.Y, tileMinY, tileMaxY);
+                Vector2 closestPoint = new Vector2(closestX, closestY);
+                float distanceSq = Vector2.DistanceSquared(pos, closestPoint);
+
+                if (distanceSq < radius * radius)
+                {
+                    // COLLISION! Resolve *only* on the Y-axis.
+                    
+                    float overlapTop = (pos.Y + radius) - tileMinY;
+                    float overlapBottom = tileMaxY - (pos.Y - radius);
+
+                    if (overlapTop < 0 || overlapBottom < 0) continue;
+
+                    float penetration = Math.Min(overlapTop, overlapBottom);
+                    
+                    if (penetration == overlapTop)
+                    {
+                        // Pushed up
+                        transform.Position.Y -= penetration;
+                    }
+                    else
+                    {
+                        // Pushed down
+                        transform.Position.Y += penetration;
+                    }
+
+                    if (_entityManager.Velocities.TryGetValue(entityId, out var velocity))
+                    {
+                        velocity.Velocity.Y = 0;
+                        _entityManager.Velocities[entityId] = velocity;
+                    }
+                    
+                    _entityManager.Transforms[entityId] = transform;
+                    PublishWorldCollision(entityId, x, y, tileType);
+                }
+            }
+        }
+    }
+
+    private void PublishWorldCollision(int entityId, int x, int y, TileType tileType)
+    {
+        _eventManager.Publish(new WorldCollisionEvent
+        {
+            EntityId = entityId,
+            TileX = x,
+            TileY = y,
+            TileType = tileType
+        });
+    }
+    
     private bool IsTileSolid(TileType type)
     {
+        // ... (your method is perfectly fine)
         switch (type)
         {
             case TileType.Stone:

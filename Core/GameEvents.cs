@@ -2,19 +2,15 @@
 
 namespace StellarSurvivors.Core
 {
-    /// <summary>
-    /// A marker interface for all game events.
-    /// </summary>
+
     public interface IEvent { }
+    
+    // ------- EVENTS ---------//
 
-    // generic event for the 'E' key
+    // Event for 'E' key -  Interaction button
     public struct UseButtonPressedEvent : IEvent { }
-
-    public struct RotationInputEvent : IEvent
-    {
-        public float Direction; // -1 for left, 1 for right
-    }
-
+    
+    
     public struct ThrustInputEvent : IEvent
     {
         
@@ -26,6 +22,7 @@ namespace StellarSurvivors.Core
         public Vector2 PodPosition;
     }
 
+    // 'E' Key
     public struct ReturnToPodEvent : IEvent
     {
         public int SpacemanId;
@@ -35,35 +32,25 @@ namespace StellarSurvivors.Core
     public class ToggleSidebarEvent : IEvent { }
 
     public class ManualGoldClickEvent : IEvent { }
-
-
-    // --- Game Logic Events ---
-
-    /// <summary>
-    /// Published by InputSystem when movement keys are pressed.
-    /// Listened for by MovementSystem to update player velocity.
-    /// </summary>
-    public class PlayerMoveInputEvent : IEvent
+    
+    
+    // Event for 'A' and 'D' 
+    public class MoveInputEvent : IEvent
     {
-        /// <summary>
-        /// The direction of input (e.g., (0, -1) for Up).
-        /// </summary>
-        public Vector2 Direction;
+        public float Direction;
 
-        public PlayerMoveInputEvent(Vector2 direction)
+        public MoveInputEvent(float direction)
         {
             Direction = direction;
         }
     }
     
-    // In your EventManager.cs
     public struct CollisionEvent : IEvent
     {
         public int EntityA;
         public int EntityB;
     }
-
-// In your EventManager.cs
+    
     public struct WorldCollisionEvent : IEvent
     {
         public int EntityId;

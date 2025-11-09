@@ -9,7 +9,7 @@ public class UIManager
     private int _screenWidth;
     private int _screenHeight;
     
-    private bool _isSidebarOpen = true;
+    private bool _isSidebarOpen = false;
     private const int _sidebarWidth = 200;
     private const int _topPanelHeight = 60;
     
@@ -54,7 +54,6 @@ public class UIManager
         Action toggleSidebarAction = () => 
         { 
             _isSidebarOpen = !_isSidebarOpen; 
-                
             // Update main content bounds when sidebar toggles
             _mainContentBounds.Width = _screenWidth - (_isSidebarOpen ? _sidebarWidth : 0);
         };
@@ -95,7 +94,7 @@ public class UIManager
 
         if (_isSidebarOpen)
         {
-            Raylib.DrawRectangleRec(_sidebarBounds, Raylib.ColorAlpha(Color.LightGray, 0.7f));
+            Raylib.DrawRectangleRec(_sidebarBounds, Raylib.ColorAlpha(Color.LightGray, 0.5f));
             Raylib.DrawRectangleLinesEx(_sidebarBounds, 1, Color.DarkGray);
         }
 
@@ -107,14 +106,18 @@ public class UIManager
         
         // 6. Draw UI (outside camera)
         string goldText = $"Gold: {_world.GameData.CurrentGold:F1}"; // "F1" = 1 decimal place
-        Raylib.DrawText(goldText, _screenWidth - 120, 10, 20, Color.Red);
+        Raylib.DrawText(goldText, _screenWidth - 150, 10, 20, Color.Red);
+        int playerId = _world.EntityManager.Players.First();
         
-        Raylib.DrawText("Health: 100", _screenWidth - 120, 40, 20, Color.White);
+        var podFuel = _world.EntityManager.Fuels[playerId];
+        string podFuelText = $"Fuel: {podFuel.CurrentFuel:F1}";
+        Raylib.DrawText(podFuelText, _screenWidth - 150, 40, 20, Color.White);
         Raylib.DrawFPS(10, 40);
+
         
         if (_world.EntityManager.Pods.Count > 0)
         {
-            int playerId = _world.EntityManager.Players.First();
+            
             if (_world.EntityManager.Transforms.ContainsKey(playerId))
             {
                 var playerTransform = _world.EntityManager.Transforms[playerId];

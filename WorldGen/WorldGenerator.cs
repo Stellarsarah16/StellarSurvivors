@@ -10,7 +10,6 @@ using Raylib_cs;
 
 public class WorldGenerator
 {
-    // This is the "assembly line"
     private List<IGenerationStep> _steps = new List<IGenerationStep>();
     private float _tileSize = 16.0f;
     private EntityFactory _entityFactory;
@@ -23,8 +22,6 @@ public class WorldGenerator
     public WorldGenerator(Game world)
     {
         _world = world;
-        // Init
-        // Create Map
         
         _entityFactory = new EntityFactory(world);
         _entityFactory.Register("grassTile", new GrassTileBlueprint());
@@ -50,8 +47,8 @@ public class WorldGenerator
         {
             for (int x = 0; x < world.WorldData.Width; x++)
             {
-                int tileId = world.WorldData.TileMap[x, y]; 
-            
+                int tileId = world.WorldData.TileMap[x, y];
+
                 string blueprintId = null; // Default to null (do nothing)
 
                 // Map the ID from the TileMap directly to a blueprint string
@@ -73,14 +70,12 @@ public class WorldGenerator
                         blueprintId = "sandTile";
                         break;
                     case TileIDs.TILE_GOLD_ORE:
-                        blueprintId = "goldTile"; // Matches your new blueprint
+                        blueprintId = "goldTile"; 
                         break;
                     case TileIDs.TILE_IRON_ORE:
-                        blueprintId = "ironTile"; // Matches your new blueprint
+                        blueprintId = "ironTile"; 
                         break;
-                
-                    // --- CRITICAL ---
-                    // By default (which includes TILE_AIR), we do nothing.
+                    // For Air do nothing
                     case TileIDs.TILE_AIR:
                     default:
                         break; // blueprintId remains null
@@ -89,15 +84,15 @@ public class WorldGenerator
                 // If a blueprint was found (i.e., it's not TILE_AIR), create it.
                 if (blueprintId != null)
                 {
+                    Vector3 entityPosition = new Vector3(x + _tileSize, (y + _tileSize) + world.WorldData.Yoffset, 0);
                     BlueprintSettings settings = new BlueprintSettings
                     {
-                        Position = new Vector3(x * _tileSize, (y * _tileSize) + world.WorldData.Yoffset, 0),
+                        Position = entityPosition,
                         Size = new Vector2(_tileSize, _tileSize),
                         Scale = Vector3.One
                     };
                     // We don't need _random or GOLD_CHANCE here anymore!
                     int entityId = _entityFactory.CreateMapEntity(blueprintId, settings);
-                    
                 }
             }
 
@@ -115,8 +110,6 @@ public class WorldGenerator
         
     }
     
-    // This is the "Open/Closed Principle" in action.
-    // We can add new steps without modifying this class.
     public void AddStep(IGenerationStep step)
     {
         _steps.Add(step);
@@ -160,7 +153,6 @@ public class WorldGenerator
 
             for (int x = startX; x < endX; x++)
             {
-                // --- THIS LINE IS UPDATED ---
                 if (IsFlatSpot(worldData, x, y, shipWidthInTiles))
                 {
                     // We found a spot!

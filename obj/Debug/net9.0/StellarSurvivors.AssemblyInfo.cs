@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StellarSurvivors")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+85951d4e5986a855245181b9041228cedce013f3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1a675365306092347117a525d41b8c564df11d69")]
 [assembly: System.Reflection.AssemblyProductAttribute("StellarSurvivors")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StellarSurvivors")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

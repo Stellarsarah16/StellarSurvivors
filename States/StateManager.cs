@@ -5,7 +5,6 @@ namespace StellarSurvivors.States;
 
 public class StateManager
 {
-    // is supposed to be a stack
     private Stack<IGameState> _states = new Stack<IGameState>();
 
     public StateManager()
@@ -14,11 +13,10 @@ public class StateManager
 
     public void PushState(IGameState state, Game world)
     {
-        // Deactivate the old "top" state if there is one
         if (_states.Count > 0)
         {
             var oldState = GetCurrentState();
-            // We'll add an OnPause() method later if we need it
+            // We'll add an OnPause() method later when we need it
         }
 
         _states.Push(state);

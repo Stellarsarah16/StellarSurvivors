@@ -8,19 +8,17 @@ public class PodControlSystem : IUpdateSystem
     private EntityManager _entityManager;
     private Boolean _isThrusting = false;
     private float _rotationInput;
-
-    // Constructor: Subscribe to events
+    
     public PodControlSystem(EventManager eventManager, EntityManager entityManager)
     {
         _entityManager = entityManager;
-        // Listen for RotationInputEvent
-        eventManager.Subscribe<RotationInputEvent>(OnRotate);
-        // Listen for ThrustInputEvent
+        // Listen for Events
+        eventManager.Subscribe<MoveInputEvent>(OnRotate);
         eventManager.Subscribe<ThrustInputEvent>(OnThrust); 
     }
 
-    // Event Handler
-    private void OnRotate(RotationInputEvent e)
+    // Event Handlers
+    private void OnRotate(MoveInputEvent e)
     {
         _rotationInput = e.Direction;
     }
@@ -56,8 +54,9 @@ public class PodControlSystem : IUpdateSystem
             transform.Rotation += _rotationInput * pod.rotationSpeed * deltaTime;
         }
 
+        var fuel = _entityManager.Fuels[controlledEntityId];
         // --- APPLY THRUST LOGIC ---
-        if (_isThrusting)
+        if (_isThrusting && fuel.CurrentFuel > 0)
         {
             // 1. Calculate the forward direction vector from rotation
             //    (Assumes 0 radians is "up")
@@ -70,12 +69,11 @@ public class PodControlSystem : IUpdateSystem
             velocity.Velocity += forwardDirection * pod.thrustForce * deltaTime;
             
             // 3. Drain energy (if it has an energy component)
-            if (_entityManager.Energies.ContainsKey(controlledEntityId))
+            if (_entityManager.Fuels.ContainsKey(controlledEntityId))
             {
-                var energy = _entityManager.Energies[controlledEntityId];
-                energy.Current -= pod.thrustEnergyDrain * deltaTime;
-                energy.Current = Math.Max(0, energy.Current); // Don't go below 0
-                _entityManager.Energies[controlledEntityId] = energy; // Write back
+                
+                fuel.CurrentFuel -= pod.thrustEnergyDrain * deltaTime;
+                fuel.CurrentFuel = Math.Max(0, fuel.CurrentFuel); // Don't go below 0
             }
             
         }
@@ -84,6 +82,7 @@ public class PodControlSystem : IUpdateSystem
         // Save modified components (structs)
         _entityManager.Transforms[controlledEntityId] = transform;
         _entityManager.Velocities[controlledEntityId] = velocity; // Write back velocity
+        _entityManager.Fuels[controlledEntityId] = fuel;
 
         // Reset flags for next frame
         _rotationInput = 0;

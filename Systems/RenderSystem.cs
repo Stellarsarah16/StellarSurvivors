@@ -17,16 +17,11 @@ namespace StellarSurvivors.Systems
         
         public void Draw(Game world, Camera2D camera)
         {
-            // --- NEW LOGIC SWITCH ---
-            
-            // If this is the background renderer, draw the visible tiles from data
             if (_layerToDraw == RenderLayer.Background)
             {
                 DrawTiles(world.WorldData, camera);
             }
             
-            // If this is the main renderer, draw the entities (Pod, Spaceman, etc.)
-            // We assume your tiles DO NOT have this layer, so the loop is small and fast.
             if (_layerToDraw == RenderLayer.Entities)
             {
                 DrawEntities(world.EntityManager, camera);
@@ -35,10 +30,7 @@ namespace StellarSurvivors.Systems
             // You can add other layers like RenderLayer.UI here,
             // which would not use the camera.
         }
-
-        /// <summary>
-        /// NEW: Draws the tilemap data based on camera position.
-        /// </summary>
+        
         private void DrawTiles(WorldData worldData, Camera2D camera)
         {
             int yOffset = worldData.Yoffset;
@@ -66,7 +58,7 @@ namespace StellarSurvivors.Systems
                 for (int x = minTileX; x <= maxTileX; x++)
                 {
                     TileType tileType = worldData.GetTileType(x, y); // Assumes GetTileType is on WorldData
-                    if (tileType == TileType.None) continue; // Skip air
+                    //if (tileType == TileType.None) continue; // Skip air
 
                     // 5. Calculate the tile's world position (re-applying offset)
                     float worldX = x * TILE_SIZE;
@@ -75,21 +67,32 @@ namespace StellarSurvivors.Systems
                     // 6. Draw the tile
                     // (Replace this with a texture-lookup if you have one)
                     Raylib.DrawRectangle((int)worldX, (int)worldY, TILE_SIZE, TILE_SIZE, GetColorForTile(tileType));
-                    if (worldData.SelectedTile != null)
+                    // --- NEW HIGHLIGHT LOGIC ---
+            
+                    // Check for Selected Tile (Yellow)
+                    if (worldData.SelectedTile != null && 
+                        worldData.SelectedTile.Value.X == x && 
+                        worldData.SelectedTile.Value.Y == y)
                     {
-                        if (worldData.SelectedTile.Value.X == x && worldData.SelectedTile.Value.Y == y)
-                        {
-                            // Draw a bright yellow border around the selected tile
-                            Raylib.DrawRectangleLines((int)worldX, (int)worldY, TILE_SIZE, TILE_SIZE, Color.Yellow);
-                        }
+                        // Draw a thick yellow border for the "held" item
+                        Raylib.DrawRectangleLinesEx(
+                            new Rectangle(worldX, worldY, TILE_SIZE, TILE_SIZE), 
+                            2, Color.Yellow);
+                    }
+                    // Check for Highlighted Tile (White)
+                    if (worldData.HoveredTile != null && 
+                             worldData.HoveredTile.Value.X == x && 
+                             worldData.HoveredTile.Value.Y == y)
+                    {
+                        // Draw a thin white border for the "hover/target"
+                        Raylib.DrawRectangleLinesEx(
+                            new Rectangle(worldX, worldY, TILE_SIZE, TILE_SIZE), 
+                            1, Color.White);
                     }
                 }
             }
         }
-
-        /// <summary>
-        /// This is your original code, now in its own method.
-        /// </summary>
+        
         private void DrawEntities(EntityManager entityManager, Camera2D camera)
         {
             foreach (var entityId in entityManager.Renderables.Keys)
@@ -147,11 +150,7 @@ namespace StellarSurvivors.Systems
                 }
             }
         }
-
-        /// <summary>
-        /// NEW: Helper to draw colors. You can change this to
-        /// return textures from a TextureManager.
-        /// </summary>
+        
         private Color GetColorForTile(TileType type)
         {
             switch (type)

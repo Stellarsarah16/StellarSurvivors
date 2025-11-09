@@ -10,8 +10,7 @@ public class PlayerStateSystem
     private EventManager _eventManager;
     private EntityManager _entityManager;
     private Game _world;
-
-    // Constructor: Subscribe
+    
     public PlayerStateSystem(EventManager eventManager, EntityManager entityManager, Game world)
     {
         _eventManager = eventManager;
@@ -27,7 +26,6 @@ public class PlayerStateSystem
     }
 
     // 1. 'E' was pressed. Decide what to do.
-// In PlayerStateSystem.cs
     private void OnUsePressed(UseButtonPressedEvent e)
     {
         if (_entityManager.PlayerInputs.Count == 0) return;
@@ -44,10 +42,9 @@ public class PlayerStateSystem
                 PodPosition = pos 
             });
         }
-        // Logic for Spaceman (This is the new part)
+        // Logic for Spaceman 
         else if (_entityManager.Spacemen.ContainsKey(controlledEntityId))
         {
-            // 1. Get the Pod's ID (from the method you mentioned)
             int podId = _entityManager.GetPodId(); 
 
             // 2. Get both positions
@@ -80,8 +77,6 @@ public class PlayerStateSystem
         _world.EntityManager.SetPodId(e.PodId);
         _entityManager.PlayerInputs.Remove(e.PodId);
         _entityManager.Players.Remove(e.PodId);
-        
-        
         Vector3 podPosition = new Vector3(e.PodPosition.X, e.PodPosition.Y, 0);
         int spacemanId = _world.CreateSpaceman(e.PodId, podPosition, new Vector2(16,16), Color.Orange);
     }
@@ -92,7 +87,6 @@ public class PlayerStateSystem
         _entityManager.Players.Remove(e.SpacemanId);
         _entityManager.PlayerInputs.Add(e.PodId, new PlayerInputComponent { Speed = 5.0f });
         _entityManager.Players.Add(e.PodId);
-        
         _entityManager.DestroyEntity(e.SpacemanId);
     }
 }

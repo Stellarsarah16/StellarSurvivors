@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using Raylib_cs;
 using StellarSurvivors.Core;
 using StellarSurvivors.Entities;
@@ -23,7 +24,12 @@ public class PlayingState : IGameState
     private RenderSystem _backgroundRenderer;
     private RenderSystem _entityRenderer;
     private UIManager _uiManager;
-    private PlayerStateSystem _playerControlSystem;
+    private PlayerStateSystem _playerStateSystem;
+    private InputSystem _inputSystem;
+    private PhysicsSystem _physicsSystem;
+    private MovementSystem _movementSystem;
+    private CollisionSystem _collisionSystem;
+    
     private WorldGenerator _worldGenerator;
     
     private Random _random = new Random();
@@ -44,28 +50,44 @@ public class PlayingState : IGameState
             Rotation = 0.0f,
             Zoom = 1.0f
         };
+        
+        //Init Systems
+        InitSystems();
+    }
+
+    public void InitSystems()
+    {
         _uiManager = new UIManager(_world, _screenWidth, _screenHeight);
         
+        // Input System goes first
+        _inputSystem = new InputSystem(_world.EntityManager, _world.EventManager,
+            _uiManager.getTopPanelBounds(),
+            _uiManager.getSidebarBounds(), () => _uiManager.isSidebarOpen());        
+
+        // Physics Based Systems
+        _physicsSystem = new PhysicsSystem(_world.EntityManager, _world.WorldData);
+        _movementSystem = new MovementSystem(_world.EntityManager);
+        _collisionSystem = new CollisionSystem(_world.EntityManager, _world.EventManager, _world.WorldData);
+
+        // Logical Systems
         _updateSystems = new List<IUpdateSystem>
         {
-            new InputSystem(world.EntityManager, world.EventManager, 
-                _uiManager.getTopPanelBounds(), 
-                _uiManager.getSidebarBounds(), () => _uiManager.isSidebarOpen()),
-            new MovementSystem(_world.EventManager),
+            new SpacemanControlSystem(_world.EventManager, _world.EntityManager),
             new PodControlSystem(_world.EventManager, _world.EntityManager),
-            new PhysicsSystem(_world.EntityManager),
-            new CollisionSystem(_world.EntityManager, _world.EventManager, _world.WorldData),
             new HealthSystem(),
             new CleanupSystem(),
-            new TileInteractionSystem(world.WorldData),
+            new FuelSystem(),
+            new TileInteractionSystem(_world.WorldData),
         };
         
-        _playerControlSystem = new PlayerStateSystem(_world.EventManager, _world.EntityManager, _world);
-            
+        // Event only Systems
+        _playerStateSystem = new PlayerStateSystem(_world.EventManager, _world.EntityManager, _world);
+
+        // Rendering Systems
         _backgroundRenderer = new RenderSystem(RenderLayer.Background);
         _entityRenderer = new RenderSystem(RenderLayer.Entities);
     }
-
+    
     public void Enter()
     {
         System.Console.WriteLine("Entering PlayingState");
@@ -99,6 +121,13 @@ public class PlayingState : IGameState
         }
         
         //Update Systems
+        _inputSystem.Update(_world);
+        _physicsSystem.Update(dt);
+        _movementSystem.UpdateX(dt);
+        _collisionSystem.UpdateX(dt);
+        _movementSystem.UpdateY(dt);
+        _collisionSystem.UpdateY(dt);
+        
         foreach (var system in _updateSystems)
         {
             system.Update(_world, dt);

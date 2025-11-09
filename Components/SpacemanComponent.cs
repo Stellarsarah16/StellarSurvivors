@@ -5,11 +5,17 @@ namespace StellarSurvivors.Components;
 public struct SpacemanComponent
 {
     private Vector2 _pod_position;
-    private int _podId;
+    public int PodId;
+    public float Thrust;
+    public float HorizontalSpeed;
+    public float ThrustEnergyDrain;
 
-    public SpacemanComponent(Vector2 podPosition, int podId)
+    public SpacemanComponent(float thrust, float speed, float energyDrain , Vector2 podPosition, int podId)
     {
+        Thrust = thrust;
+        HorizontalSpeed = speed;
         _pod_position = podPosition;
-        _podId = podId;
+        PodId = podId;
+        ThrustEnergyDrain = energyDrain;
     }
 }

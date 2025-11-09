@@ -1,0 +1,158 @@
+﻿# Stellar Survivors Engine: Emergent Mechanics Development Plan
+
+## 🎯 Core Vision
+To evolve the engine from a basic physics sandbox into a synergistic system where specialized entities (Pod, Spaceman) interact with a dynamic, distinct world (TileMap) to gather resources, manage energy, and build complex structures.
+
+---
+
+## 🛠️ Prerequisites: Core Architecture Upgrades
+Before diving into specific mechanics, these foundational upgrades are necessary to support them.
+
+### 1. The `SpatialMap` (Chunk System)
+As discussed, this is critical for performance.
+* **Structs:** `ChunkCoord` (X, Y integers).
+* **EntityManager Additions:**
+    * `Dictionary<ChunkCoord, List<int>> SpatialMap`
+    * `Dictionary<int, ChunkCoord> EntityChunkCache`
+    * `void UpdateEntityChunk(int entityId, Vector2 newPos)`
+* **System Updates:** `PhysicsSystem` must call `UpdateEntityChunk` after moving an entity.
+
+### 2. The `TileProperty` Registry
+We need a way to know *more* about a tile than just its ID.
+* **New Class/Struct:** `TileDefinition`
+    * `bool IsSolid`
+    * `float Friction` (default 1.0f)
+    * `float Hardness` (time required to mine)
+    * `bool IsFlammable`
+* **WorldData Additions:**
+    * `Dictionary<TileType, TileDefinition> TileRegistry`
+    * `void RegisterTile(TileType type, TileDefinition def)`
+    * `TileDefinition GetTileDef(TileType type)`
+
+---
+
+## ⛏️ Phase 1: Mining & Resources Loop
+**Goal:** Give the spaceman a purpose (gathering) and the pod a purpose (transport/refining).
+
+### New Components
+* **`ResourceComponent`** (Added to small, floating entities spawned when a tile is destroyed)
+    * `ResourceType Type` (Enum: IronOre, GoldOre, Stone)
+    * `int Quantity`
+* **`InventoryComponent`** (Added to Pod and Mothership)
+    * `Dictionary<ResourceType, int> Contents`
+    * `int MaxCapacity`
+* **`ToolComponent`** (Added to Spaceman)
+    * `ToolType CurrentTool` (Enum: Cutter, Grapple)
+    * `float MiningSpeed` (Multiplier for overcoming tile `Hardness`)
+
+### System Updates
+* **`TileInteractionSystem` (Update)**
+    * *New State:* `Mining` (Requires holding mouse button).
+    * *Logic:* If `CurrentTool` is `Cutter`, decrease clicked tile's "health" by `deltaTime * MiningSpeed`. When zero, set tile to `Air` and spawn entity with `ResourceComponent`.
+* **`ResourceSystem` (New)**
+    * *Role:* Handles picking up resources.
+    * *Logic:* Checks for collisions between entities with `InventoryComponent` (Pod) and `ResourceComponent` (floating ore). On collision, despawn ore and add to inventory.
+
+---
+
+## 🔥 Phase 2: Systemic Tile Properties
+**Goal:** Make the world reactive. Tiles should interact with physics and each other.
+
+### New Components
+* **`HazardComponent`** (For entities like acid pools or lava, if not just tiles)
+    * `float DamagePerSecond`
+    * `DamageType Type` (Heat, Chemical, Kinetic)
+
+### System Updates
+* **`PhysicsSystem` (Update)**
+    * *Logic:* When an entity is on the ground, get the tile directly beneath it.
+    * *Interaction:* Read `TileDefinition.Friction`. if `Ice`, reduce `VelocityComponent.Damping` (slippery). If `Mud`, increase `Damping` (sticky).
+* **`EnvironmentalSystem` (New)**
+    * *Role:* Slow, tick-based world updates (e.g., once every 10 frames).
+    * *Logic:* Scan active chunks.
+        * If `Tile == Lava` and `TileAbove == Water`, set `TileAbove = Stone` (Obsidian generator).
+        * If `Tile == Grass` and `Neighbor == Fire`, small chance to turn into `Fire`.
+
+---
+
+## 🧰 Phase 3: Tool & Interaction Mode System
+**Goal:** Strategic choice for the spaceman. They cannot do everything at once.
+
+### New Data Structures
+* **`InteractionMode` (Enum)**
+    * `MovementOnly` (Safety mode, no accidental clicks)
+    * `Mining` (Destroys tiles)
+    * `Building` (Moves/places tiles)
+
+### System Updates
+* **`PlayerStateSystem` (Update)**
+    * *Logic:* Listen for number keys (1, 2, 3) to swap `InteractionMode` stored in the `SpacemanComponent`.
+* **`TileInteractionSystem` (Update)**
+    * *Logic:* Wrap the entire `Update` loop in a switch statement based on the current `InteractionMode`.
+        * `case Building`: Run existing "Select/Move" logic.
+        * `case Mining`: Run new "Hold-to-break" logic.
+
+---
+
+## ⚡ Phase 4: Power Grid & Factory Mechanics
+**Goal:** End-game progression. Building automated systems.
+
+### New Components (or specialized Tiles)
+*We could use entities for these, but special Tiles might be faster for large grids.*
+* **`PowerSource`** (Tag for a tile/entity that generates power)
+    * `float PowerOutput`
+* **`PowerConduit`** (Tag for tiles that transmit power, e.g., Copper Wire tiles)
+    * `float MaxThroughput`
+* **`PowerConsumer`** (Machine that needs power to work)
+    * `float PowerRequired`
+    * `bool IsPowered` (Runtime state)
+
+### New System
+* **`PowerGridSystem` (New)**
+    * *Role:* The most complex system. Runs periodically (e.g., 4 times/second).
+    * *Logic (Simplified Flood Fill):*
+        1.  Find all `PowerSource` tiles.
+        2.  From each source, perform a Breadth-First Search (BFS) through adjacent `PowerConduit` tiles.
+        3.  If BFS hits a `PowerConsumer` tile, mark it as `IsPowered = true`.
+        4.  Any consumer NOT reached by BFS is marked `IsPowered = false`.
+
+---
+
+## 👽 Phase 5: Hazards & Combat
+**Goal:** Risk/Reward. Reasons to build defenses.
+
+### New Components
+* **`HealthComponent`**
+    * `float Current`, `float Max`
+* **`AIComponent`**
+    * `AIState CurrentState` (Idle, Wander, Chase, Flee)
+    * `float DetectionRadius`
+* **`FactionComponent`** (Optional but good)
+    * `FactionId` (Player, Enemy, Neutral). Helps decide who to attack.
+
+### New Systems
+* **`AISystem` (New)**
+    * *Role:* Decides what enemies *want* to do.
+    * *Logic:* Uses `SpatialMap` to find nearest `Faction:Player` entity. If within `DetectionRadius`, switch state to `Chase`.
+    * *Output:* Generates `MoveInputEvent` for the enemy entity (reusing your existing movement logic!).
+* **`CombatSystem` (New)**
+    * *Role:* Resolves damage.
+    * *Logic:* Listens for `CollisionEvent`. If Entity A has `DamageComponent` and Entity B has `HealthComponent`, subtract health.
+    * *Cleanup:* If `Health <= 0`, publish `EntityDeathEvent` (which calls `DestroyEntity`).
+
+---
+
+## 💡 Additional Suggestions for Synergy
+
+### 1. Emergent "Chemistry" System
+Instead of hardcoded interactions, use tags.
+* Give Oil tiles a `Flammable` tag.
+* Give Acid tiles a `Corrosive` tag.
+* Your `EnvironmentalSystem` just checks tags: `if (Tile A is Hot && Tile B is Flammable) -> Ignite B`.
+* *Result:* Players can build complex traps or factories by exploiting these simple rules.
+
+### 2. The "Mother Brain" UI
+Since you want incremental mechanics, you need a way to visualize growing numbers.
+* Create a **`DashboardSystem`** that only runs when the player is *inside* the Mothership.
+* It subscribes to almost every event (`ResourceCollected`, `TileMined`, `EnemyKilled`) and updates a persistent "Score" or "Research Points" data structure.
+* Unlocking new tech in the Dashboard could set flags in the `WorldData` that other systems read (e.g., `bool UnlockJetpackV2` makes `SpacemanControlSystem` use a higher thrust value).
