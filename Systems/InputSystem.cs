@@ -50,7 +50,7 @@ namespace StellarSurvivors.Systems
             
             if (Raylib.IsMouseButtonPressed(MouseButton.Left) && !mouseOverUI)
             {
-                _eventManager.Publish(new ManualGoldClickEvent());
+                _eventManager.Publish(new LeftClickOutsideUIEvent());
             }
 
             if (_entityManager.Pods.ContainsKey(controlledEntityId) || 
@@ -75,6 +75,38 @@ namespace StellarSurvivors.Systems
                 _entityManager.Transforms[controlledEntityId] = transform;
             }
             
+            if (_entityManager.Spacemen.ContainsKey(controlledEntityId))
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.W))
+                {
+                    _eventManager.Publish(new JumpInputEvent());
+                }
+                if (Raylib.IsMouseButtonDown(MouseButton.Left))
+                {
+                    bool justPressedThisFrame = Raylib.IsMouseButtonPressed(MouseButton.Left);
+                    Vector2 screenPos = Raylib.GetMousePosition();
+                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.Camera);
+                    _eventManager.Publish(new LeftMouseDownEvent(screenPos,  worldPos, justPressedThisFrame));
+                }
+                if (Raylib.IsMouseButtonDown(MouseButton.Right))
+                {
+                    Vector2 screenPos = Raylib.GetMousePosition();
+                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.Camera);
+                    _eventManager.Publish(new RightMouseDownEvent(screenPos,  worldPos));
+                }
+                if (Raylib.IsMouseButtonReleased(MouseButton.Left))
+                {
+                    _eventManager.Publish(new LeftMouseReleasedEvent 
+                    { 
+                    });
+                }
+                if (Raylib.IsMouseButtonReleased(MouseButton.Right))
+                {
+                    _eventManager.Publish(new RightMouseReleasedEvent 
+                    { 
+                    });
+                }
+            }
         }
     }
 }

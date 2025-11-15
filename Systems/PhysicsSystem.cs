@@ -1,12 +1,13 @@
 ﻿namespace StellarSurvivors.Systems;
 using StellarSurvivors.Core;
+using StellarSurvivors.Enums;
 
 public class PhysicsSystem
 {
     private EntityManager _entityManager;
     private WorldData _worldData;
     private static float _gravity = 200f;
-    private const int TILE_SIZE = 16;
+    private const int TILE_SIZE = GameConstants.TILE_SIZE;
 
     public PhysicsSystem(EntityManager entityManager, WorldData worldData)
     {
@@ -24,18 +25,20 @@ public class PhysicsSystem
         var transform = _entityManager.Transforms[entityId];
 
         // --- 1. APPLY GRAVITY ---
-        if (_entityManager.Pods.ContainsKey(entityId))
+        if (velocity.Velocity.Y < velocity.TerminalVelocity)
         {
-            velocity.Velocity.Y += (_gravity / 8) * deltaTime;
-        }
-        else
-        {
-            velocity.Velocity.Y += _gravity * deltaTime;
+            if (_entityManager.Pods.ContainsKey(entityId))
+            {
+                velocity.Velocity.Y += (_gravity / 8) * deltaTime;
+            }
+
+            if (_entityManager.Spacemen.ContainsKey(entityId))
+            {
+                velocity.Velocity.Y += _gravity * deltaTime;
+            }
         }
 
         // --- 2. APPLY FRICTION/DAMPING ---
-        
-        // This is the float-to-int conversion you asked for
         int tileX = (int)(transform.Position.X / TILE_SIZE);
         
         // Don't forget your Y-offset!

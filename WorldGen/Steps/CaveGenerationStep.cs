@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using StellarSurvivors.Core;
 
 // Add your project's namespaces
 using StellarSurvivors.WorldGen;

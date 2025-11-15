@@ -11,7 +11,7 @@ using Raylib_cs;
 public class WorldGenerator
 {
     private List<IGenerationStep> _steps = new List<IGenerationStep>();
-    private float _tileSize = 16.0f;
+    private float _tileSize = GameConstants.TILE_SIZE;
     private EntityFactory _entityFactory;
     
     private Random _random = new Random();
@@ -19,9 +19,14 @@ public class WorldGenerator
     
     private Game _world;
 
+    private RoomLibrary _roomLibrary;
+
     public WorldGenerator(Game world)
     {
         _world = world;
+        _roomLibrary = new  RoomLibrary();
+        
+        int seed = _random.Next();
         
         _entityFactory = new EntityFactory(world);
         _entityFactory.Register("grassTile", new GrassTileBlueprint());
@@ -31,12 +36,16 @@ public class WorldGenerator
         _entityFactory.Register("sandTile", new SandTileBlueprint());
         _entityFactory.Register("goldTile", new GoldTileBlueprint());
         _entityFactory.Register("ironTile", new IronTileBlueprint());
+        _entityFactory.Register("coalTile", new CoalTileBlueprint());
+        _entityFactory.Register("hardTile", new HardTileBlueprint());
         
-        int seed = _random.Next();
+
         AddStep(new SurfaceGenerationStep(new PerlinNoiseStrategy()));
         AddStep(new BaseTerrainStep());
         AddStep(new CaveGenerationStep());
-        AddStep(new MineralGenerationStep(_random, 0.01, 0.003));
+        AddStep(new VaultGenerationStep(_random, _roomLibrary, 30));
+        AddStep(new MineralGenerationStep(_random, 0.005, 0.001, 0.01));
+        
         
         int mapWidth = 1000;
         int mapHeight = 400;
@@ -75,6 +84,12 @@ public class WorldGenerator
                     case TileIDs.TILE_IRON_ORE:
                         blueprintId = "ironTile"; 
                         break;
+                    case TileIDs.TILE_COAL:
+                        blueprintId = "coalTile"; 
+                        break;
+                    case TileIDs.TILE_HARD:
+                        blueprintId = "hardTile"; 
+                        break;
                     // For Air do nothing
                     case TileIDs.TILE_AIR:
                     default:
@@ -101,9 +116,9 @@ public class WorldGenerator
         Vector3 positionAbove = new Vector3(motherShipPosition.X, motherShipPosition.Y - 50, motherShipPosition.Z);
         // Create Player
         Console.WriteLine(positionAbove);
-        var podId = world.CreatePlayer(
+        var podId = world.CreatePod(
             positionAbove,
-            new Vector2(24, 24),
+            new Vector2(144, 144),
             Color.Pink
         );
         world.EntityManager.SetPodId(podId);
@@ -122,11 +137,7 @@ public class WorldGenerator
         worldData.TileMap = new int[width, height];
         worldData.SurfaceHeightMap = new int[width];
         
-        foreach (var step in _steps)
-        {
-            // This line will no longer crash
-            step.Process(worldData, seed); 
-        }
+        foreach (var step in _steps) { step.Process(worldData, seed); }
     
         return worldData;
     }
@@ -134,7 +145,7 @@ public class WorldGenerator
     private Vector3 PlaceMotherShip(WorldData worldData)
     {
         // 1. Define ship properties
-        Vector2 shipSize = new Vector2(96, 64);
+        Vector2 shipSize = new Vector2(480, 240);
         int shipWidthInTiles = (int)Math.Ceiling(shipSize.X / _tileSize);
 
         // 2. Set default spawn position (fallback if no spot is found)
@@ -160,17 +171,14 @@ public class WorldGenerator
                     float surfaceWorldY = (y * _tileSize) + worldData.Yoffset;
                     float spawnWorldY = surfaceWorldY - (shipSize.Y / 2f);
 
-                    spawnPosition = new Vector3(spotCenterX, spawnWorldY, 0);
+                    spawnPosition = new Vector3(spotCenterX, spawnWorldY + GameConstants.TILE_SIZE + 10, 0);
 
                     spotFound = true;
                     break; 
                 }
             }
 
-            if (spotFound)
-            {
-                break;
-            }
+            if (spotFound) { break; }
         }
 
         // 4. Create the mothership
@@ -186,12 +194,11 @@ public class WorldGenerator
 
     private bool IsFlatSpot(WorldData worldData, int startX, int startY, int widthInTiles)
     {
-        for (int i = 0; i < widthInTiles; i++)
+        for (int i = 0; i < (widthInTiles / 2); i++)  // subtracted 4 - temp fix
         {
             int currentX = startX + i;
 
-            // --- Safety Check: Don't scan off the map edge ---
-            // (Assumes WorldData has Width/Height properties)
+            // Make sure ship is within world boundaries
             if (currentX >= worldData.Width || startY >= worldData.Height || startY < 1)
             {
                 return false;

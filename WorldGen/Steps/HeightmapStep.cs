@@ -1,5 +1,6 @@
 ﻿namespace StellarSurvivors.WorldGen.Steps;
 using StellarSurvivors.WorldGen.Strategies;
+using StellarSurvivors.Core;
 
 public class HeightmapStep : IGenerationStep
 {

@@ -3,12 +3,14 @@ using System.Runtime.CompilerServices;
 using Raylib_cs;
 using StellarSurvivors.Core;
 using StellarSurvivors.Entities;
+using StellarSurvivors.Gameplay.Tools;
 using StellarSurvivors.Systems;
 using StellarSurvivors.WorldGen;
 using StellarSurvivors.WorldGen.Strategies;
 using StellarSurvivors.WorldGen.Steps;
 using StellarSurvivors.WorldGen.Blueprints;
 using StellarSurvivors.UI;
+using StellarSurvivors.Enums;
 
 namespace StellarSurvivors.States;
 
@@ -29,8 +31,9 @@ public class PlayingState : IGameState
     private PhysicsSystem _physicsSystem;
     private MovementSystem _movementSystem;
     private CollisionSystem _collisionSystem;
-    
+    private ResourceSystem _resourceSystem;
     private WorldGenerator _worldGenerator;
+    private MothershipInteractionSystem _mothershipInteractionSystem;
     
     private Random _random = new Random();
     
@@ -68,16 +71,18 @@ public class PlayingState : IGameState
         _physicsSystem = new PhysicsSystem(_world.EntityManager, _world.WorldData);
         _movementSystem = new MovementSystem(_world.EntityManager);
         _collisionSystem = new CollisionSystem(_world.EntityManager, _world.EventManager, _world.WorldData);
+        _resourceSystem = new ResourceSystem(_world);
+        _mothershipInteractionSystem = new MothershipInteractionSystem(_world);
 
         // Logical Systems
         _updateSystems = new List<IUpdateSystem>
         {
-            new SpacemanControlSystem(_world.EventManager, _world.EntityManager),
+            new SpacemanControlSystem(_world),
             new PodControlSystem(_world.EventManager, _world.EntityManager),
             new HealthSystem(),
+            //new FuelSystem(),
             new CleanupSystem(),
-            new FuelSystem(),
-            new TileInteractionSystem(_world.WorldData),
+
         };
         
         // Event only Systems
@@ -109,9 +114,9 @@ public class PlayingState : IGameState
         _uiManager.Update();
         
         // 1. Update the camera target
-        if (_world.EntityManager.Players.Count > 0)
+        if (_world.EntityManager.ControlledEntityId != -1)
         {
-            int playerId = _world.EntityManager.Players.First();
+            int playerId = _world.EntityManager.ControlledEntityId;
             if (_world.EntityManager.Transforms.ContainsKey(playerId))
             {
                 var playerTransform = _world.EntityManager.Transforms[playerId];
@@ -127,6 +132,8 @@ public class PlayingState : IGameState
         _collisionSystem.UpdateX(dt);
         _movementSystem.UpdateY(dt);
         _collisionSystem.UpdateY(dt);
+        _collisionSystem.UpdateEntityCollisions();
+        
         
         foreach (var system in _updateSystems)
         {

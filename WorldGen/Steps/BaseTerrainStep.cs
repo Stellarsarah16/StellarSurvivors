@@ -1,5 +1,5 @@
 ﻿namespace StellarSurvivors.WorldGen.Steps;
-
+using StellarSurvivors.Core;
 using static StellarSurvivors.WorldGen.Blueprints.TileIDs;
 
 public class BaseTerrainStep : IGenerationStep

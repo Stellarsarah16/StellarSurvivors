@@ -1,4 +1,4 @@
-﻿namespace StellarSurvivors.WorldGen;
+﻿namespace StellarSurvivors.Enums;
 
 public enum RenderLayer
 {

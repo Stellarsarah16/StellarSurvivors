@@ -9,13 +9,17 @@ public struct SpacemanComponent
     public float Thrust;
     public float HorizontalSpeed;
     public float ThrustEnergyDrain;
+    public float JumpForce;
+    public bool IsOnGround;
 
-    public SpacemanComponent(float thrust, float speed, float energyDrain , Vector2 podPosition, int podId)
+    public SpacemanComponent(float thrust, float jumpForce, float speed, float energyDrain , Vector2 podPosition, int podId)
     {
         Thrust = thrust;
         HorizontalSpeed = speed;
         _pod_position = podPosition;
         PodId = podId;
         ThrustEnergyDrain = energyDrain;
+        JumpForce = jumpForce;
+        IsOnGround = false;
     }
 }

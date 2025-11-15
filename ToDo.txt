@@ -67,9 +67,9 @@ We need a way to know *more* about a tile than just its ID.
 * **`PhysicsSystem` (Update)**
     * *Logic:* When an entity is on the ground, get the tile directly beneath it.
     * *Interaction:* Read `TileDefinition.Friction`. if `Ice`, reduce `VelocityComponent.Damping` (slippery). If `Mud`, increase `Damping` (sticky).
-* **`EnvironmentalSystem` (New)**
+* TODO: **`EnvironmentalSystem` (New)**
     * *Role:* Slow, tick-based world updates (e.g., once every 10 frames).
-    * *Logic:* Scan active chunks.
+    * *Logic:* Scan active chunks. 
         * If `Tile == Lava` and `TileAbove == Water`, set `TileAbove = Stone` (Obsidian generator).
         * If `Tile == Grass` and `Neighbor == Fire`, small chance to turn into `Fire`.
 
@@ -86,13 +86,18 @@ We need a way to know *more* about a tile than just its ID.
 
 ### System Updates
 * **`PlayerStateSystem` (Update)**
-    * *Logic:* Listen for number keys (1, 2, 3) to swap `InteractionMode` stored in the `SpacemanComponent`.
+    * *Logic:* Listen for number keys (1, 2, 3) to swap `InteractionMode` stored in the `SpacemanComponent`, 
+            or we can use the sidePanel and show options dynamically based on our needs, in this case tool selection.
 * **`TileInteractionSystem` (Update)**
     * *Logic:* Wrap the entire `Update` loop in a switch statement based on the current `InteractionMode`.
         * `case Building`: Run existing "Select/Move" logic.
         * `case Mining`: Run new "Hold-to-break" logic.
 
 ---
+
+##  Room Connecting step  ??
+**Goal:** Strategic Room placement with interlocking rooms that work together.  
+    Different sets of rooms that will need to be found in a specific order based on criteria such as a key.
 
 ## ⚡ Phase 4: Power Grid & Factory Mechanics
 **Goal:** End-game progression. Building automated systems.
@@ -101,7 +106,7 @@ We need a way to know *more* about a tile than just its ID.
 *We could use entities for these, but special Tiles might be faster for large grids.*
 * **`PowerSource`** (Tag for a tile/entity that generates power)
     * `float PowerOutput`
-* **`PowerConduit`** (Tag for tiles that transmit power, e.g., Copper Wire tiles)
+* **`PowerConduit`** (Tag fo r tiles that transmit power, e.g., Copper Wire tiles)
     * `float MaxThroughput`
 * **`PowerConsumer`** (Machine that needs power to work)
     * `float PowerRequired`

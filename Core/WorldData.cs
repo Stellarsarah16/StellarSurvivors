@@ -1,5 +1,11 @@
-﻿using System.Drawing;
+﻿namespace StellarSurvivors.Core;
+
+using Raylib_cs;
+using System.Drawing;
 using StellarSurvivors.WorldGen.Blueprints;
+using StellarSurvivors.Enums;
+using Color = Raylib_cs.Color;
+using StellarSurvivors.Components;
 
 
 public class WorldData
@@ -15,12 +21,7 @@ public class WorldData
     public int[] SurfaceHeightMap { get; set; }
     private Dictionary<TileType, TileDefinition> _tileRegistry { get; set; }
     // A fallback definition for unregistered tiles (prevents crashes)
-    private readonly TileDefinition _defaultAirDef = new TileDefinition 
-    { 
-        Name = "Air", 
-        IsSolid = false, 
-        Friction = 1.0f 
-    };
+    private readonly TileDefinition _defaultAirDef;
 
     public WorldData(int width, int height, int yOffset)
     {
@@ -33,32 +34,61 @@ public class WorldData
         
         // Init Tile Registry
         _tileRegistry = new Dictionary<TileType, TileDefinition>();
-        InitializeTileRegistry();
-    }
-    
-    private void InitializeTileRegistry()
-    {
-        // Air / None
-        RegisterTile(TileType.None, new TileDefinition 
+        _defaultAirDef = new TileDefinition
         { 
             Name = "Air", 
-            IsSolid = false 
-        });
+            IsSolid = false, 
+            Friction = 1.0f,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Shape,
+                Shape = ShapeType.Rectangle,
+                Color = Color.Blank
+            }
+        };
+        
+    }
+    
+    public void InitializeTileRegistry()
+    {
+        Texture2D goldTexture = AssetManager.GetTexture("gold");
+        Texture2D ironTexture = AssetManager.GetTexture("iron");
+        Texture2D stoneTexture = AssetManager.GetTexture("stone");
+        Texture2D coalTexture = AssetManager.GetTexture("coal");
+        Texture2D grassTexture = AssetManager.GetTexture("grass");
+        
+        // Air / None
+        RegisterTile(TileType.None, _defaultAirDef);
 
         // Solid Blocks
         RegisterTile(TileType.Dirt, new TileDefinition 
         { 
             Name = "Dirt", 
             IsSolid = true, 
-            Friction = 1.1f, // Slightly slower to walk on dirt?
-            Hardness = 1.0f 
+            Friction = 2f, // Slightly slower to walk on dirt?
+            Hardness = 1.0f,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Shape,
+                Shape = ShapeType.Rectangle,
+                Color = new Color(130, 80, 50, 255)
+            }
         });
 
         RegisterTile(TileType.Stone, new TileDefinition 
         { 
             Name = "Stone", 
             IsSolid = true, 
-            Hardness = 5.0f 
+            Hardness = 5.0f,
+            DropsResource = ResourceType.Stone,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Texture,
+                Texture = stoneTexture,
+                // Grabs the first 16x16 square from the 'terrain' texture
+                SourceRect = new Raylib_cs.Rectangle(0, 0, GameConstants.TILE_SIZE, GameConstants.TILE_SIZE),
+                Tint = Color.White
+            }
         });
 
         // Special interactions
@@ -66,15 +96,105 @@ public class WorldData
         { 
             Name = "Water", 
             IsSolid = false, // Not solid, but maybe we add 'IsLiquid' later for swimming logic
-            Friction = 0.5f, // Slippery!
-            Hardness = 0f 
+            Friction = 4f, // Slippery!
+            Hardness = 0f,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Shape,
+                Shape = ShapeType.Rectangle,
+                Color = new Color(50, 80, 200, 255)
+            }
         });
         
         RegisterTile(TileType.Grass, new TileDefinition 
         { 
             Name = "Grass", 
             IsSolid = false,
-            IsFlammable = true 
+            IsFlammable = true,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Texture,
+                Texture = grassTexture,
+                // Grabs the first 16x16 square from the 'terrain' texture
+                SourceRect = new Raylib_cs.Rectangle(0, 0, GameConstants.TILE_SIZE, GameConstants.TILE_SIZE),
+                Tint = Color.White
+            }
+        });
+        RegisterTile(TileType.Sand, new TileDefinition 
+        { 
+            Name = "Sand", 
+            IsSolid = false,
+            IsFlammable = false,
+            Friction = 3f,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Shape,
+                Shape = ShapeType.Rectangle,
+                Color = new Color(194, 178, 128, 255)
+            }
+        });
+        
+        RegisterTile(TileType.Iron, new TileDefinition 
+        { 
+            Name = "Iron", 
+            IsSolid = true,
+            IsFlammable = false,
+            Hardness = 5.0f,
+            DropsResource = ResourceType.IronOre,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Texture,
+                Texture = ironTexture,
+                // Grabs the first 16x16 square from the 'terrain' texture
+                SourceRect = new Raylib_cs.Rectangle(0, 0, GameConstants.TILE_SIZE, GameConstants.TILE_SIZE),
+                Tint = Color.White
+            }
+        });
+        RegisterTile(TileType.Gold, new TileDefinition 
+        { 
+            Name = "Gold", 
+            IsSolid = true,
+            IsFlammable = false,
+            Hardness = 7.0f,
+            DropsResource = ResourceType.GoldOre,
+            RenderInfo = new TileRenderDefinition
+            {
+            Type = RenderType.Texture,
+            Texture = goldTexture,
+            // Grabs the first 16x16 square from the 'terrain' texture
+            SourceRect = new Raylib_cs.Rectangle(0, 0, GameConstants.TILE_SIZE, GameConstants.TILE_SIZE),
+            Tint = Color.White
+            }
+        });
+        RegisterTile(TileType.Coal, new TileDefinition 
+        { 
+            Name = "Coal", 
+            IsSolid = true,
+            IsFlammable = true,
+            Hardness = 4.0f,
+            DropsResource = ResourceType.Coal,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Texture,
+                Texture = coalTexture,
+                // Grabs the first 16x16 square from the 'terrain' texture
+                SourceRect = new Raylib_cs.Rectangle(0, 0, GameConstants.TILE_SIZE, GameConstants.TILE_SIZE),
+                Tint = Color.White
+            }
+        });
+        RegisterTile(TileType.Hard, new TileDefinition 
+        { 
+            Name = "Hard", 
+            IsSolid = true,
+            IsFlammable = false,
+            Hardness = 100f,
+            DropsResource = ResourceType.Coal,
+            RenderInfo = new TileRenderDefinition
+            {
+                Type = RenderType.Shape,
+                Shape = ShapeType.Rectangle,
+                Color = new Color(100, 80, 60, 255)
+            }
         });
     }
     
@@ -96,28 +216,16 @@ public class WorldData
         // 2. Use a switch to map the ID to the correct enum type
         switch (tileId)
         {
-            case TileIDs.TILE_GRASS:
-                return TileType.Grass;
-            
-            case TileIDs.TILE_DIRT:
-                return TileType.Dirt;
+            case TileIDs.TILE_GRASS:     return TileType.Grass;
+            case TileIDs.TILE_DIRT:      return TileType.Dirt;
+            case TileIDs.TILE_WATER:     return TileType.Water;
+            case TileIDs.TILE_SAND:      return TileType.Sand;
+            case TileIDs.TILE_STONE:     return TileType.Stone;
+            case TileIDs.TILE_IRON_ORE:  return TileType.Iron;
+            case TileIDs.TILE_GOLD_ORE:  return TileType.Gold;
+            case TileIDs.TILE_COAL:      return TileType.Coal;
+            case TileIDs.TILE_HARD:      return TileType.Hard;
 
-            case TileIDs.TILE_WATER:
-                return TileType.Water;
-
-            case TileIDs.TILE_SAND:
-                return TileType.Sand;
-            
-            case TileIDs.TILE_STONE:
-                return TileType.Stone;
-
-            case TileIDs.TILE_IRON_ORE:
-                return TileType.Iron;
-
-            case TileIDs.TILE_GOLD_ORE:
-                return TileType.Gold;
-
-            case TileIDs.TILE_AIR:
             default:
                 return TileType.None;
         }
@@ -140,6 +248,7 @@ public class WorldData
             case TileType.Stone:  newId = TileIDs.TILE_STONE;   break;
             case TileType.Iron:   newId = TileIDs.TILE_IRON_ORE;  break;
             case TileType.Gold:   newId = TileIDs.TILE_GOLD_ORE;  break;
+            case TileType.Coal:   newId = TileIDs.TILE_COAL;    break;
             default:              newId = TileIDs.TILE_AIR;     break;
         }
 
@@ -157,26 +266,4 @@ public class WorldData
         return _defaultAirDef;
     }
 
-}
-
-public enum TileType
-{
-    None,   // Or Empty
-    Grass,
-    Dirt,
-    Water,
-    Stone,
-    Wood,   
-    Iron,
-    Gold,
-    Sand
-}
-
-public class TileDefinition
-{
-    public string Name { get; set; } = "Unknown";
-    public bool IsSolid = false;
-    public float Friction = 1.0f;
-    public float Hardness  = 0f;
-    public bool IsFlammable = false;
 }

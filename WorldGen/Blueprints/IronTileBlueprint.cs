@@ -2,6 +2,7 @@
 using Raylib_cs;
 using StellarSurvivors.Core;
 using StellarSurvivors.Components;
+using StellarSurvivors.Enums;
 
 namespace StellarSurvivors.WorldGen.Blueprints
 {

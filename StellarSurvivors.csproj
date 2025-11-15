@@ -11,4 +11,16 @@
       <PackageReference Include="Raylib-cs" Version="7.0.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Interfaces\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- This "glob" pattern finds all files in all subfolders of Assets -->
+        <Content Include="Assets\**\*.*">
+            <!-- This is the C# property for "Copy if newer" -->
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>

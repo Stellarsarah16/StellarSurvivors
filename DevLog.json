@@ -28,5 +28,26 @@
   "system": "TileDefinition",
   "message": "A repository on WorldData that maps tile attributes to the tile type.  aka friction, isSolid, isFlammable",
   "context": "WorldData, TileType, TileDefinition"
+},
+{
+  "timestamp": "11/09/2025",
+  "type": "systems",
+  "system": "Tool System",
+  "message": "Using an interface, and system to change the tool type on the ToolComponent",
+  "context": "SpacemanControlSystem, EntityManager.Tools, ToolComponent"
+},
+{
+  "timestamp": "11/10/2025",
+  "type": "system",
+  "system": "Resource System",
+  "message": "",
+  "context": ""
+},
+{
+  "timestamp": "11/10/2025",
+  "type": "Inventory System",
+  "system": "",
+  "message": "",
+  "context": ""
 }
 ]

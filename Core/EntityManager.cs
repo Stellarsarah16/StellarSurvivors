@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Net.Http.Headers;
+using System.Numerics;
 
 namespace StellarSurvivors.Core;
 using StellarSurvivors.Components;
@@ -31,7 +32,10 @@ public class EntityManager
     public Dictionary<int, SpacemanComponent> Spacemen;
     public Dictionary<int, ColliderComponent> Colliders;
     public Dictionary<int, FuelComponent>  Fuels;
-    public HashSet<int> Players {get; private set;}
+    public Dictionary<int, ResourceComponent> Resources;
+    public Dictionary<int, MiningComponent>  MiningComponents;
+    public Dictionary<int, ToolComponent> Tools;
+    public Dictionary<int, InventoryComponent> Inventories;
 
     // Spacial Hashmap and Reverse lookup map for supreme performance.
     public const int CHUNK_SIZE = 64;
@@ -39,8 +43,10 @@ public class EntityManager
     private Dictionary<int, ChunkCoord> _entityChunkCache = new Dictionary<int, ChunkCoord>();
     
     //Reference to singleton entityIDs
-    private int _podId;
-    private int _mothershipId;
+    public int ControlledEntityId { get; private set; } = -1;
+    public int PodId {get; private set; } = -1;
+    public int MothershipId {get; private set; } = -1;
+    public int SpacemanId {get; private set; } = -1;
     
     public  EntityManager()
     {
@@ -56,32 +62,41 @@ public class EntityManager
         Spacemen = new Dictionary<int, SpacemanComponent>();
         Colliders  = new Dictionary<int, ColliderComponent>();
         Fuels = new Dictionary<int, FuelComponent>();
-        Players = new HashSet<int>();
+        Resources  = new Dictionary<int, ResourceComponent>();
+        MiningComponents =  new Dictionary<int, MiningComponent>();
+        Tools = new Dictionary<int, ToolComponent>();
+        Inventories = new Dictionary<int, InventoryComponent>();
     }
     
     public int CreateNewEntityId() {
-        // Get the current ID and Increment
         int newId = _nextEntityId++;
         return newId;
     }
 
     public void SetPodId(int podId)
     {
-        _podId = podId;
+        PodId = podId;
     }
-
-    public int GetPodId()
-    {
-        return _podId;
-    }
-    
     public void SetMothershipId(int mothershipId)
     {
-        _mothershipId = mothershipId;
+        MothershipId = mothershipId;
+    }
+    public void SetSpacemanId(int spacemanId)
+    {
+        SpacemanId = spacemanId;
+    }
+    public void SetControlledEntity(int entityId)
+    {
+        ControlledEntityId = entityId;
     }
 
     public void DestroyEntity(int entityId)
     {
+        if (entityId == ControlledEntityId) { ControlledEntityId = -1; }
+        if (entityId == PodId) { PodId = -1; }
+        if (entityId == MothershipId) { MothershipId = -1; }
+        if (entityId == SpacemanId) { SpacemanId = -1; }
+        
         Transforms.Remove(entityId);
         Renderables.Remove(entityId);
         Spacemen.Remove(entityId);
@@ -90,7 +105,11 @@ public class EntityManager
         Velocities.Remove(entityId);
         DestroyTags.Remove(entityId);
         Pods.Remove(entityId);
-        Players.Remove(entityId);
+        Inventories.Remove(entityId);
+        Tools.Remove(entityId);
+        MiningComponents.Remove(entityId);
+        Resources.Remove(entityId);
+        Fuels.Remove(entityId);
         
         RemoveEntityFromChunk(entityId);
     
@@ -168,6 +187,13 @@ public class EntityManager
 
         // Update the cache to the new location
         _entityChunkCache[entityId] = newChunk;
+    }
+    
+    public void InitializeGameAssets()
+    {
+        // Load all textures from the "Assets/Textures" folder
+        // (Make sure that folder exists and has your PNGs)
+        AssetManager.LoadTextures("Assets/Textures");
     }
 
 }

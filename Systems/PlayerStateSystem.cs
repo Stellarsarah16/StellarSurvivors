@@ -1,8 +1,8 @@
-﻿using System.Numerics;
+﻿namespace StellarSurvivors.Systems;
+using System.Numerics;
 using Raylib_cs;
 using StellarSurvivors.Components;
-
-namespace StellarSurvivors.Systems;
+using StellarSurvivors.Enums;
 using StellarSurvivors.Core;
 
 public class PlayerStateSystem
@@ -45,7 +45,7 @@ public class PlayerStateSystem
         // Logic for Spaceman 
         else if (_entityManager.Spacemen.ContainsKey(controlledEntityId))
         {
-            int podId = _entityManager.GetPodId(); 
+            int podId = _entityManager.PodId; 
 
             // 2. Get both positions
             var spacemanTransform = _entityManager.Transforms[controlledEntityId];
@@ -76,17 +76,54 @@ public class PlayerStateSystem
         System.Console.WriteLine($"Exit pod: {e.PodId}");
         _world.EntityManager.SetPodId(e.PodId);
         _entityManager.PlayerInputs.Remove(e.PodId);
-        _entityManager.Players.Remove(e.PodId);
         Vector3 podPosition = new Vector3(e.PodPosition.X, e.PodPosition.Y, 0);
-        int spacemanId = _world.CreateSpaceman(e.PodId, podPosition, new Vector2(16,16), Color.Orange);
+        int spacemanId = _world.CreateSpaceman(e.PodId, podPosition, new Vector2(52,52), Color.Orange);
     }
     
     private void OnReturnToPod(ReturnToPodEvent e) {
-        System.Console.WriteLine($"Return to pod: {e.PodId}");
+        var spacemanInventory = _entityManager.Inventories[e.SpacemanId];
+        var podInventory =  _entityManager.Inventories[e.PodId];
+        
+        var spacemanTransform = _entityManager.Transforms[e.SpacemanId];
+        Vector2 dropPosition = new Vector2(spacemanTransform.Position.X, spacemanTransform.Position.Y);
+        
+        // We loop through the spaceman's inventory
+        foreach (var item in spacemanInventory.Contents)
+        {
+            ResourceType type = item.Key;
+            int quantity = item.Value;
+            Color color = GetColorForResourceType(type);
+
+            // 2. Try to add the items to the pod's inventory
+            if (!podInventory.TryAddItem(type, quantity))
+            {
+                // 3. If it fails (pod is full), drop the items
+                //    by creating a new resource entity at the spaceman's location.
+                _world.CreateResourceEntity(dropPosition, type, quantity, color);
+            }
+            spacemanInventory.ClearContents();
+        }
+        
         _entityManager.PlayerInputs.Remove(e.SpacemanId);
-        _entityManager.Players.Remove(e.SpacemanId);
         _entityManager.PlayerInputs.Add(e.PodId, new PlayerInputComponent { Speed = 5.0f });
-        _entityManager.Players.Add(e.PodId);
+        _entityManager.SetControlledEntity(e.PodId);
+
         _entityManager.DestroyEntity(e.SpacemanId);
+    }
+
+    private Color GetColorForResourceType(ResourceType type)
+    {
+        // This switch is correct. It looks at the ITEM's type.
+        switch (type)
+        {
+            case ResourceType.Stone:
+                return Color.Gray;
+            case ResourceType.IronOre:
+                return new Color(211, 115, 63, 255); // A rusty orange
+            case ResourceType.GoldOre:
+                return Color.Gold;
+            default:
+                return Color.Magenta; // Easy to spot if a type is missing
+        }
     }
 }
