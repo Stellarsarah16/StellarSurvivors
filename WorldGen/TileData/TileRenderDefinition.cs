@@ -1,4 +1,4 @@
-﻿namespace StellarSurvivors.Core;
+﻿namespace StellarSurvivors.WorldGen.TileData;
 using Raylib_cs;
 using System.Numerics;
 using StellarSurvivors.Components;

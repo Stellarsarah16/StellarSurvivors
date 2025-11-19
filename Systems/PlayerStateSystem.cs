@@ -73,11 +73,18 @@ public class PlayerStateSystem
     // 2. The 'ExitPodEvent' was published. Do the logic.
     private void OnExitPod(ExitPodEvent e)
     {
-        System.Console.WriteLine($"Exit pod: {e.PodId}");
-        _world.EntityManager.SetPodId(e.PodId);
-        _entityManager.PlayerInputs.Remove(e.PodId);
-        Vector3 podPosition = new Vector3(e.PodPosition.X, e.PodPosition.Y, 0);
-        int spacemanId = _world.CreateSpaceman(e.PodId, podPosition, new Vector2(52,52), Color.Orange);
+        var fuel = _entityManager.Fuels[e.PodId];
+        Console.WriteLine(fuel.CurrentFuel);
+        if (fuel.ConsumeFuel(2))
+        {
+            _world.EntityManager.SetPodId(e.PodId);
+            _entityManager.PlayerInputs.Remove(e.PodId);
+            Vector3 podPosition = new Vector3(e.PodPosition.X, e.PodPosition.Y, 0);
+            int spacemanId = _world.WorldGenerator.EntityFactory.CreateSpaceman(e.PodId, podPosition, new Vector2(52, 52), Color.Orange);
+            AudioManager.PlaySfx("pew", .6f, 0.3f);
+        }
+        else Console.WriteLine("Not enough fuel");
+
     }
     
     private void OnReturnToPod(ReturnToPodEvent e) {
@@ -99,13 +106,14 @@ public class PlayerStateSystem
             {
                 // 3. If it fails (pod is full), drop the items
                 //    by creating a new resource entity at the spaceman's location.
-                _world.CreateResourceEntity(dropPosition, type, quantity, color);
+                //TODO: handle excess items when entering pod;
+                //_world.CreateResourceEntity(dropPosition, type, quantity, color);
             }
-            spacemanInventory.ClearContents();
         }
         
+        spacemanInventory.ClearContents();
         _entityManager.PlayerInputs.Remove(e.SpacemanId);
-        _entityManager.PlayerInputs.Add(e.PodId, new PlayerInputComponent { Speed = 5.0f });
+        _entityManager.PlayerInputs.Add(e.PodId, new PlayerInputComponent(5.0f));
         _entityManager.SetControlledEntity(e.PodId);
 
         _entityManager.DestroyEntity(e.SpacemanId);

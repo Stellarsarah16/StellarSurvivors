@@ -18,7 +18,7 @@ public class MoveTileTool : ITool
         WorldData worldData = world.WorldData;
         
         // Always clear hover first
-        worldData.HoveredTile = null;
+        worldData.Interaction.HoveredTile = null;
 
         // Get Owner Position
         if (!world.EntityManager.Transforms.TryGetValue(ownerId, out var transform)) return;
@@ -34,12 +34,12 @@ public class MoveTileTool : ITool
 
         TileType hoveredType = worldData.GetTileType(hoveredTile.X, hoveredTile.Y);
         // LOGIC: Decide if we should highlight this tile
-        if (worldData.SelectedTile == null)
+        if (worldData.Interaction.SelectedTile == null)
         {
             // MODE: Looking to pick up (highlight if NOT empty)
             if (hoveredType != TileType.None)
             {
-                worldData.HoveredTile = hoveredTile;
+                worldData.Interaction.HoveredTile = hoveredTile;
             }
         }
         else
@@ -47,7 +47,7 @@ public class MoveTileTool : ITool
             // MODE: Looking to drop (highlight if IS empty)
             if (hoveredType == TileType.None)
             {
-                worldData.HoveredTile = hoveredTile;
+                worldData.Interaction.HoveredTile = hoveredTile;
             }
         }
     }
@@ -60,35 +60,35 @@ public class MoveTileTool : ITool
 
         WorldData worldData = world.WorldData;
 
-        if (worldData.HoveredTile.HasValue)
+        if (worldData.Interaction.HoveredTile.HasValue)
         {
-            Point clickedTile = worldData.HoveredTile.Value;
-            Console.WriteLine(worldData.HoveredTile.Value);
-            if (worldData.SelectedTile == null)
+            Point clickedTile = worldData.Interaction.HoveredTile.Value;
+            Console.WriteLine(worldData.Interaction.HoveredTile.Value);
+            if (worldData.Interaction.SelectedTile == null)
             {
                 // PICK UP
-                worldData.SelectedTile = clickedTile;
-                worldData.HoveredTile = null; // Clear immediate hover
+                worldData.Interaction.SelectedTile = clickedTile;
+                worldData.Interaction.HoveredTile = null; // Clear immediate hover
             }
             else
             {
                 // DROP / SWAP
-                Point sourceTile = worldData.SelectedTile.Value;
+                Point sourceTile = worldData.Interaction.SelectedTile.Value;
                 TileType sourceType = worldData.GetTileType(sourceTile.X, sourceTile.Y);
 
                 worldData.SetTileType(clickedTile.X, clickedTile.Y, sourceType);
                 worldData.SetTileType(sourceTile.X, sourceTile.Y, TileType.None);
 
                 // Reset state
-                worldData.SelectedTile = null;
-                worldData.HoveredTile = null;
+                worldData.Interaction.SelectedTile = null;
+                worldData.Interaction.HoveredTile = null;
             }
         }
         else
         {
             // Clicked invalid area (out of range, or on a wall while holding a wall)
             // Cancel selection
-            worldData.SelectedTile = null;
+            worldData.Interaction.SelectedTile = null;
         }
     }
 

@@ -1,4 +1,6 @@
-﻿namespace StellarSurvivors.Systems;
+﻿using StellarSurvivors.WorldGen.TileData;
+
+namespace StellarSurvivors.Systems;
 using System.IO.Enumeration;
 using Raylib_cs; // For Vector2
 using System;
@@ -75,7 +77,7 @@ public class CollisionSystem
         for (int x = minTileX; x <= maxTileX; x++)
         {
             TileType tileType = _mapData.GetTileType(x, y);
-            if (!_mapData.GetTileDef(tileType).IsSolid) continue;
+            if (!TileRegistry.GetDefinition(tileType).IsSolid) continue;
 
             float tileMinX = x * TILE_SIZE;
             float tileMaxX = tileMinX + TILE_SIZE;
@@ -178,7 +180,8 @@ public class CollisionSystem
             for (int x = minTileX; x <= maxTileX; x++)
             {
                 TileType tileType = _mapData.GetTileType(x, y);
-                if (!_mapData.GetTileDef(tileType).IsSolid) continue;
+                TileDefinition tileDef = TileRegistry.GetDefinition(tileType);
+                if (!tileDef.IsSolid) continue;
 
                 float tileMinX = x * TILE_SIZE;
                 float tileMaxX = tileMinX + TILE_SIZE;

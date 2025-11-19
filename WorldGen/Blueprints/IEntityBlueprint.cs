@@ -5,5 +5,5 @@ namespace StellarSurvivors.WorldGen.Blueprints;
 
 public interface IEntityBlueprint
 {
-    void Apply(Game world, int entityId, BlueprintSettings settings);
+    void Apply(EntityManager entityManager, int entityId, BlueprintSettings settings);
 }

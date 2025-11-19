@@ -1,7 +1,6 @@
 ﻿using Raylib_cs;
 using System.Numerics;
 using StellarSurvivors.Core; // For Game
-using StellarSurvivors.Entities; // For EntityManager
 using StellarSurvivors.Components; // For InventoryComponent
 using System.Linq; // For .Any() and .First()
 

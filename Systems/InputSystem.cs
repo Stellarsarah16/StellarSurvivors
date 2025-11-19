@@ -85,13 +85,13 @@ namespace StellarSurvivors.Systems
                 {
                     bool justPressedThisFrame = Raylib.IsMouseButtonPressed(MouseButton.Left);
                     Vector2 screenPos = Raylib.GetMousePosition();
-                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.Camera);
+                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.CameraSystem.Camera);
                     _eventManager.Publish(new LeftMouseDownEvent(screenPos,  worldPos, justPressedThisFrame));
                 }
                 if (Raylib.IsMouseButtonDown(MouseButton.Right))
                 {
                     Vector2 screenPos = Raylib.GetMousePosition();
-                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.Camera);
+                    Vector2 worldPos = Raylib.GetScreenToWorld2D(screenPos, world.CameraSystem.Camera);
                     _eventManager.Publish(new RightMouseDownEvent(screenPos,  worldPos));
                 }
                 if (Raylib.IsMouseButtonReleased(MouseButton.Left))

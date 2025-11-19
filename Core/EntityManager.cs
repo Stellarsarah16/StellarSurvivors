@@ -1,8 +1,7 @@
-﻿using System.Net.Http.Headers;
-using System.Numerics;
-
-namespace StellarSurvivors.Core;
+﻿namespace StellarSurvivors.Core;
 using StellarSurvivors.Components;
+using System.Numerics;
+using StellarSurvivors.Enums;
 
 public class EntityManager
 {
@@ -36,6 +35,9 @@ public class EntityManager
     public Dictionary<int, MiningComponent>  MiningComponents;
     public Dictionary<int, ToolComponent> Tools;
     public Dictionary<int, InventoryComponent> Inventories;
+    public Dictionary<int, AnimationComponent> Animations;
+    public Dictionary<int, CameraFocusComponent> CameraFocus;
+    public Dictionary<int, GeneratorComponent> Generators;
 
     // Spacial Hashmap and Reverse lookup map for supreme performance.
     public const int CHUNK_SIZE = 64;
@@ -66,6 +68,9 @@ public class EntityManager
         MiningComponents =  new Dictionary<int, MiningComponent>();
         Tools = new Dictionary<int, ToolComponent>();
         Inventories = new Dictionary<int, InventoryComponent>();
+        CameraFocus = new Dictionary<int, CameraFocusComponent>();
+        Animations = new Dictionary<int, AnimationComponent>();
+        Generators = new Dictionary<int, GeneratorComponent>();
     }
     
     public int CreateNewEntityId() {
@@ -194,6 +199,7 @@ public class EntityManager
         // Load all textures from the "Assets/Textures" folder
         // (Make sure that folder exists and has your PNGs)
         AssetManager.LoadTextures("Assets/Textures");
+        AssetManager.LoadAudio("Assets/sfx");
     }
 
 }

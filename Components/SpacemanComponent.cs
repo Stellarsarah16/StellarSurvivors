@@ -11,6 +11,7 @@ public struct SpacemanComponent
     public float ThrustEnergyDrain;
     public float JumpForce;
     public bool IsOnGround;
+    public float Friction = .25f;
 
     public SpacemanComponent(float thrust, float jumpForce, float speed, float energyDrain , Vector2 podPosition, int podId)
     {

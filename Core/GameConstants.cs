@@ -2,6 +2,7 @@
 
 public static class GameConstants
 {
+
     public const int TILE_SIZE = 28;
 
     // public const int PLAYER_STARTING_HEALTH = 100;

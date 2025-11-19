@@ -5,5 +5,6 @@ public enum ResourceType
     Stone, 
     IronOre, 
     GoldOre,
-    Coal
+    Coal,
+    None
 }

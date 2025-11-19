@@ -10,6 +10,7 @@ public class MothershipInteractionSystem
     private EntityManager _entityManager;
     private EventManager _eventManager;
     private const float INTERACT_RANGE_SQ = 100 * 100; // 100 pixel range
+    private float _fuelRate;
 
     public MothershipInteractionSystem(Game world)
     {
@@ -19,40 +20,6 @@ public class MothershipInteractionSystem
         // Subscribe to the new events
         _eventManager.Subscribe<RefineFuelEvent>(OnRefineFuel);
         _eventManager.Subscribe<RechargePodEvent>(OnRechargePod);
-    }
-    
-
-
-    private void RefineFuel(int podId, int mothershipId)
-    {
-        var podInv = _entityManager.Inventories[podId];
-        var shipFuel = _entityManager.Fuels[mothershipId];
-
-        // Check if Pod has 1 Coal AND Mothership is not full
-        if (shipFuel.CurrentFuel < shipFuel.FuelCapacity && 
-            podInv.TryRemoveItem(ResourceType.Coal, 1))
-        {
-            // Success! Add 1 fuel to the Mothership
-            shipFuel.CurrentFuel += 5;
-            _entityManager.Fuels[mothershipId] = shipFuel;
-        }
-    }
-    
-    private void RechargePod(int podId, int mothershipId)
-    {
-        var podFuel = _entityManager.Fuels[podId];
-        var shipFuel = _entityManager.Fuels[mothershipId];
-
-        // Check if Mothership has fuel AND Pod is not full
-        if (shipFuel.CurrentFuel > 0 && podFuel.CurrentFuel < podFuel.FuelCapacity)
-        {
-            // Transfer 1 fuel
-            shipFuel.CurrentFuel--;
-            podFuel.CurrentFuel++;
-            
-            _entityManager.Fuels[podId] = podFuel;
-            _entityManager.Fuels[mothershipId] = shipFuel;
-        }
     }
     
     private void OnRefineFuel(RefineFuelEvent e)
@@ -70,11 +37,13 @@ public class MothershipInteractionSystem
         // --- Run the refine logic ---
         var podInv = _entityManager.Inventories[podId];
         var shipFuel = _entityManager.Fuels[mothershipId];
+        var mothership = _entityManager.MotherShips[mothershipId];
 
         if (shipFuel.CurrentFuel < shipFuel.FuelCapacity && 
             podInv.TryRemoveItem(ResourceType.Coal, 1))
         {
-            shipFuel.CurrentFuel += 5 ;
+            AudioManager.PlaySfx("reload", 1, .9f);
+            shipFuel.CurrentFuel += mothership.RechargeRate ;
             _entityManager.Fuels[mothershipId] = shipFuel;
         }
     }
@@ -94,11 +63,13 @@ public class MothershipInteractionSystem
         // --- Run the recharge logic ---
         var podFuel = _entityManager.Fuels[podId];
         var shipFuel = _entityManager.Fuels[mothershipId];
+        var mothership = _entityManager.MotherShips[mothershipId];
 
         if (shipFuel.CurrentFuel > 0 && podFuel.CurrentFuel < podFuel.FuelCapacity)
         {
             shipFuel.CurrentFuel--;
-            podFuel.CurrentFuel += 5;
+            podFuel.CurrentFuel += mothership.RechargeRate;
+            AudioManager.PlaySfx("reload", 1, 1);
             
             _entityManager.Fuels[podId] = podFuel;
             _entityManager.Fuels[mothershipId] = shipFuel;

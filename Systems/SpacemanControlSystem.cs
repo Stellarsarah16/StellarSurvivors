@@ -4,6 +4,7 @@ using Raylib_cs;
 namespace StellarSurvivors.Systems;
 using System.Numerics;
 using StellarSurvivors.Core; 
+using StellarSurvivors.Components;
 
 public class SpacemanControlSystem : IUpdateSystem
 {
@@ -87,8 +88,8 @@ public class SpacemanControlSystem : IUpdateSystem
             fuelComp.CurrentFuel -= cost;
             _entityManager.Fuels[spacemanId] = fuelComp;
             
-            Camera2D currentCamera = _world.Camera;
-            Vector2 worldPos = Raylib.GetScreenToWorld2D(e.MousePosition, _world.Camera);
+            Camera2D currentCamera = _world.CameraSystem.Camera;
+            Vector2 worldPos = Raylib.GetScreenToWorld2D(e.MousePosition, _world.CameraSystem.Camera);
             toolComp.CurrentTool.Use(
                 spacemanId, 
                 worldPos,
@@ -124,6 +125,7 @@ public class SpacemanControlSystem : IUpdateSystem
             toolComp.EquipTool(e.ToolName);
         }
     }
+    
 
     // 3. Update Method: This applies all physics
     public void Update(Game world, float deltaTime)
@@ -138,34 +140,72 @@ public class SpacemanControlSystem : IUpdateSystem
             var spaceman = world.EntityManager.Spacemen[playerId];
             var velocity = world.EntityManager.Velocities[playerId];
             var fuel = world.EntityManager.Fuels[playerId];
+            
+            if (!world.EntityManager.PlayerInputs.TryGetValue(playerId, out var input) ||
+                !world.EntityManager.Animations.TryGetValue(playerId, out var anim))
+            {
+                // Not a controllable, animated Spaceman
+                return;
+            }
+            
+            // --- 2. HORIZONTAL PHYSICS ---
+            // This logic is now DE-COUPLED and runs EVERY frame.
+            if (Math.Abs(_horizontalInput) > 0.1f)
+            {
+                float airControlFactor = spaceman.IsOnGround ? 1.0f : 0.8f; // Example: 80% control in air
+                velocity.Velocity.X += _horizontalInput * spaceman.HorizontalSpeed * airControlFactor * deltaTime;
 
-            // --- Apply Logic ---
+                // This is also a good place to set facing direction
+                input.FacingDirection = (_horizontalInput > 0.1f) ? 1.0f : -1.0f;
+            }
+            else
+            {
+                // Apply horizontal friction/damping if on ground
+                if (spaceman.IsOnGround)
+                {
+                    // This is a simple friction model
+                    velocity.Velocity.X *= 1.0f - (spaceman.Friction * deltaTime); 
+                }
+            }
+            
+            // --- 3. VERTICAL PHYSICS ---
+            // This is your jump/thrust logic, now separate.
             if (_jumpPressed)
             {
                 if (spaceman.IsOnGround)
                 {
-                    // --- BEHAVIOR 1: GROUND JUMP ---
                     velocity.Velocity.Y = -spaceman.JumpForce;
                 }
-                else if (fuel.CurrentFuel > 0)
-                {
-                    // --- BEHAVIOR 2: AIR DOUBLE-JUMP (TAP) ---
-                    // This is a single burst of thrust
-                }
             }
-            // If we didn't *just press* the key, check if we're *holding* it
-            if (_thrustHeld && !spaceman.IsOnGround && fuel.CurrentFuel > 0)
+            else if (_thrustHeld && !spaceman.IsOnGround && fuel.CurrentFuel > 0)
             {
-                Console.WriteLine("Applying continuous thrust");
                 velocity.Velocity.Y -= spaceman.Thrust * deltaTime;
                 fuel.CurrentFuel -= spaceman.ThrustEnergyDrain * deltaTime;
             }
-
-            // B) Apply the horizontal control (if there was any)
-            if (_horizontalInput != 0)
+            
+            
+            // Animate
+            // Priority 1: Is the player thrusting?
+            if (_thrustHeld && !spaceman.IsOnGround && fuel.CurrentFuel > 0)
             {
-                velocity.Velocity.X += _horizontalInput * spaceman.HorizontalSpeed * deltaTime;
+                anim.Play("spaceman_thrust");
             }
+            // Priority 2: If not, is the player falling?
+            else if (!spaceman.IsOnGround)
+            {
+                anim.Play("spaceman_fall");
+            }
+            // Priority 3: If not, is the player walking? (on ground + moving)
+            else if (spaceman.IsOnGround && Math.Abs(_horizontalInput) > 0.1f)
+            {
+                anim.Play("spaceman_walk");
+            }
+            // Priority 4: If not... the player must be idle.
+            else
+            {
+                anim.Play("spaceman_idle");
+            }
+            
             
             // --- Write changes back ---
             world.EntityManager.Velocities[playerId] = velocity;
@@ -192,8 +232,7 @@ public class SpacemanControlSystem : IUpdateSystem
             }
             if (Raylib.IsKeyPressed(KeyboardKey.Three))
             {
-                // This assumes "Grapple" is in your Toolset (if you've added it)
-                // toolComp.EquipTool("Grapple");
+               toolComp.EquipTool("Miner");
             }
             
             // --- 2. NEW: Handle Tool Selection Input (Scroll Wheel) ---
@@ -210,7 +249,7 @@ public class SpacemanControlSystem : IUpdateSystem
             if (toolComp.CurrentTool != null)
             {
                 Vector2 mouseScreen = Raylib.GetMousePosition();
-                Vector2 mousePos = Raylib.GetScreenToWorld2D(mouseScreen, _world.Camera);
+                Vector2 mousePos = Raylib.GetScreenToWorld2D(mouseScreen, _world.CameraSystem.Camera);
                 
                 toolComp.CurrentTool.Update(playerId, mousePos, _world);
             }

@@ -4,7 +4,7 @@ using StellarSurvivors.Enums;
 
 namespace StellarSurvivors.Components;
 
-public struct RenderComponent
+public class RenderComponent
 {
     public Vector2 Size;
     public RenderLayer Layer;

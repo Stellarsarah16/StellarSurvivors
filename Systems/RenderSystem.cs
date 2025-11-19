@@ -5,6 +5,7 @@ using Raylib_cs;
 using StellarSurvivors.Components;
 using StellarSurvivors.Core;
 using StellarSurvivors.Enums;
+using StellarSurvivors.WorldGen.TileData;
 
 public class RenderSystem
 {
@@ -59,7 +60,7 @@ public class RenderSystem
             for (int x = minTileX; x <= maxTileX; x++)
             {
                 TileType tileType = worldData.GetTileType(x, y); // Assumes GetTileType is on WorldData
-                TileDefinition tileDefinition = worldData.GetTileDef(tileType);
+                TileDefinition tileDefinition = TileRegistry.GetDefinition(tileType);
                 TileRenderDefinition renderInfo = tileDefinition.RenderInfo;
                 
                 //if (tileType == TileType.None) continue; // Skip air
@@ -80,7 +81,6 @@ public class RenderSystem
                     case RenderType.Texture:
                         if (renderInfo.Texture.Id == 0) 
                         {
-                            //Console.WriteLine(renderInfo.Type + "   "+ tileDefinition.Name);
                             // Fallback for missing texture
                             Raylib.DrawRectangleRec(destRect, Color.Magenta);
                             break;
@@ -100,9 +100,9 @@ public class RenderSystem
                 // --- HIGHLIGHT LOGIC ---
         
                 // Check for Selected Tile (Yellow)
-                if (worldData.SelectedTile != null && 
-                    worldData.SelectedTile.Value.X == x && 
-                    worldData.SelectedTile.Value.Y == y)
+                if (worldData.Interaction.SelectedTile != null && 
+                    worldData.Interaction.SelectedTile.Value.X == x && 
+                    worldData.Interaction.SelectedTile.Value.Y == y)
                 {
                     // Draw a thick yellow border for the "held" item
                     Raylib.DrawRectangleLinesEx(
@@ -110,14 +110,14 @@ public class RenderSystem
                         2, Color.Yellow);
                 }
                 // Check for Highlighted Tile (White)
-                if (worldData.HoveredTile != null && 
-                         worldData.HoveredTile.Value.X == x && 
-                         worldData.HoveredTile.Value.Y == y)
+                if (worldData.Interaction.HoveredTile != null && 
+                         worldData.Interaction.HoveredTile.Value.X == x && 
+                         worldData.Interaction.HoveredTile.Value.Y == y)
                 {
                     // Draw a thin white border for the "hover/target"
                     Raylib.DrawRectangleLinesEx(
                         new Rectangle(worldX, worldY, TILE_SIZE, TILE_SIZE), 
-                        1, Color.White);
+                        1, worldData.Interaction.HoveredColor);
                 }
             }
         }
@@ -135,13 +135,20 @@ public class RenderSystem
                 var transform = entityManager.Transforms[entityId];
                 var render = entityManager.Renderables[entityId];
                 float degrees = transform.Rotation * (180f / MathF.PI);
+                
+                entityManager.PlayerInputs.TryGetValue(entityId, out var input);
 
                 Vector2 pos2d = new Vector2(transform.Position.X, transform.Position.Y);
                 Vector2 scaledSize = new Vector2(render.Size.X * transform.Scale.X, render.Size.Y * transform.Scale.Y);
                 Vector2 origin = new Vector2(scaledSize.X / 2.0f, scaledSize.Y / 2.0f);
                 Rectangle destRect = new Rectangle(pos2d.X, pos2d.Y, scaledSize.X, scaledSize.Y);
 
-
+                Rectangle finalSourceRect = render.SourceRect;
+                if (input != null)
+                {
+                    finalSourceRect.Width *= input.FacingDirection;
+                }
+                
                 switch (render.Type)
                 {
                     case RenderType.Shape:
@@ -197,7 +204,7 @@ public class RenderSystem
                         
                         Raylib.DrawTexturePro(
                             render.Texture,   // The texture to draw
-                            render.SourceRect, // Which part of the texture to use
+                            finalSourceRect, // Which part of the texture to use
                             destRect,          // Where on the screen to draw it (pos, size)
                             origin,            // The center of rotation
                             degrees,           // The rotation

@@ -1,5 +1,6 @@
 ﻿namespace StellarSurvivors.Systems;
 using StellarSurvivors.Core;
+using StellarSurvivors.WorldGen.TileData;
 using StellarSurvivors.Enums;
 
 public class PhysicsSystem
@@ -47,7 +48,7 @@ public class PhysicsSystem
         
         // ...to get the tile definition for the ground *below* it.
         TileType groundTileType = _worldData.GetTileType(tileX, tileY + 1);
-        TileDefinition groundDef = _worldData.GetTileDef(groundTileType);
+        TileDefinition groundDef = TileRegistry.GetDefinition(groundTileType);
 
         float damping;
         if (groundDef.IsSolid)

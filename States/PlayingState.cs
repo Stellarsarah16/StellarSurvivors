@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using Raylib_cs;
 using StellarSurvivors.Core;
-using StellarSurvivors.Entities;
+using StellarSurvivors.Gameplay.Generators;
 using StellarSurvivors.Gameplay.Tools;
 using StellarSurvivors.Systems;
 using StellarSurvivors.WorldGen;
@@ -19,7 +19,7 @@ public class PlayingState : IGameState
 
     private int _screenWidth;
     private int _screenHeight;
-    
+    private Random _random = new Random();
     private Game _world;
     
     private List<IUpdateSystem> _updateSystems;
@@ -32,36 +32,21 @@ public class PlayingState : IGameState
     private MovementSystem _movementSystem;
     private CollisionSystem _collisionSystem;
     private ResourceSystem _resourceSystem;
-    private WorldGenerator _worldGenerator;
     private MothershipInteractionSystem _mothershipInteractionSystem;
     
-    private Random _random = new Random();
-    
-
     public PlayingState(Game world, int screenWidth, int screenHeight)
     {
         _world = world;
         _screenWidth  = screenWidth;
         _screenHeight = screenHeight;
         
-
-         // added the Yoffset -600
-        world.Camera = new Camera2D()
-        {
-            Offset = new Vector2(screenWidth / 2.0f, screenHeight / 2.0f),
-            Target = Vector2.Zero,
-            Rotation = 0.0f,
-            Zoom = 1.0f
-        };
-        
         //Init Systems
+        _uiManager = new UIManager(_world, _screenWidth, _screenHeight);
         InitSystems();
     }
 
     public void InitSystems()
     {
-        _uiManager = new UIManager(_world, _screenWidth, _screenHeight);
-        
         // Input System goes first
         _inputSystem = new InputSystem(_world.EntityManager, _world.EventManager,
             _uiManager.getTopPanelBounds(),
@@ -73,7 +58,7 @@ public class PlayingState : IGameState
         _collisionSystem = new CollisionSystem(_world.EntityManager, _world.EventManager, _world.WorldData);
         _resourceSystem = new ResourceSystem(_world);
         _mothershipInteractionSystem = new MothershipInteractionSystem(_world);
-
+        
         // Logical Systems
         _updateSystems = new List<IUpdateSystem>
         {
@@ -81,8 +66,8 @@ public class PlayingState : IGameState
             new PodControlSystem(_world.EventManager, _world.EntityManager),
             new HealthSystem(),
             //new FuelSystem(),
+            new AnimationSystem(_world.EntityManager),
             new CleanupSystem(),
-
         };
         
         // Event only Systems
@@ -96,15 +81,7 @@ public class PlayingState : IGameState
     public void Enter()
     {
         System.Console.WriteLine("Entering PlayingState");
-        _worldGenerator = new WorldGenerator(_world);
-        _world.Generators.Add(new BasicMiner(0.3));
-    }
-
-    public void Exit()
-    {
-        System.Console.WriteLine("Exiting PlayingState");
-        // Cleanup Entities
-        //_world.RemoveEntity(_playerId);
+        //_world.Generators.Add(new BasicMiner(0.3));
     }
 
     // --------------------- UPDATE ---------------------
@@ -120,8 +97,8 @@ public class PlayingState : IGameState
             if (_world.EntityManager.Transforms.ContainsKey(playerId))
             {
                 var playerTransform = _world.EntityManager.Transforms[playerId];
-                _world.Camera.Target = new Vector2(playerTransform.Position.X, playerTransform.Position.Y);
-                _world.Camera.Offset = new Vector2(Raylib.GetScreenWidth() / 2f, Raylib.GetScreenHeight() / 2f);
+                //_world.CameraSystem.Camera.Target = new Vector2(playerTransform.Position.X, playerTransform.Position.Y);
+                //_world.CameraSystem.Camera.Offset = new Vector2(Raylib.GetScreenWidth() / 2f, Raylib.GetScreenHeight() / 2f);
             }
         }
         
@@ -134,38 +111,27 @@ public class PlayingState : IGameState
         _collisionSystem.UpdateY(dt);
         _collisionSystem.UpdateEntityCollisions();
         
+        foreach (var system in _updateSystems) { system.Update(_world, dt); }
         
-        foreach (var system in _updateSystems)
-        {
-            system.Update(_world, dt);
-        }
-
-        // Update Generators and UI Buttons
-        foreach (var generator in _world.Generators)
-        {
-            generator.Update(dt, _world.GameData);
-        }
+        _world.WorldData.Interaction.UpdateFlashTimer(dt);
     }
 
     // -------------------  DRAW --------------------
     public void Draw()
     {
-        // 2. Begin 2D mode
-        Raylib.BeginMode2D(_world.Camera);
-        
-        // 3. Clear background
+        Raylib.BeginMode2D(_world.CameraSystem.Camera);
         Raylib.ClearBackground(Color.Black);
 
         // 4. --- Draw Each layer ---
-        _backgroundRenderer.Draw(_world, _world.Camera); // <-- Draws tiles FIRST
-        _entityRenderer.Draw(_world, _world.Camera);     // <-- Draws player SECOND
+        _backgroundRenderer.Draw(_world, _world.CameraSystem.Camera); // <-- Draws tiles FIRST
+        _entityRenderer.Draw(_world, _world.CameraSystem.Camera);     // <-- Draws player SECOND
         
-        // In your RenderSystem, after drawing the pod
-        int controlledEntityId = _world.EntityManager.PlayerInputs.Keys.First();
-        
-        // 5. End 2D mode
         Raylib.EndMode2D();
         
         _uiManager.Draw();
+    }
+
+    public void Exit()
+    {    
     }
 }

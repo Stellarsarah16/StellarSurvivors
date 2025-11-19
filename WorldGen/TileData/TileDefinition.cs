@@ -1,4 +1,4 @@
-﻿namespace StellarSurvivors.Core;
+﻿namespace StellarSurvivors.WorldGen.TileData;
 using StellarSurvivors.Enums;
 
 public class TileDefinition

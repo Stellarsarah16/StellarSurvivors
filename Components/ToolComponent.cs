@@ -15,6 +15,7 @@ public class ToolComponent
         Toolset = new Dictionary<string, ITool>
         {
             { "Drill", new DrillTool() },
+            { "Miner", new MinerPlacerTool() },
             { "MoveTile", new MoveTileTool() } // You can implement this later
         };
         

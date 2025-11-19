@@ -3,6 +3,7 @@ using System.Numerics;
 using StellarSurvivors.Core;
 using StellarSurvivors.Enums;
 using StellarSurvivors.Components;
+using StellarSurvivors.WorldGen.TileData;
 using System.Drawing;
 using Raylib_cs;
 
@@ -11,7 +12,7 @@ public class DrillTool : ITool
     public float MiningSpeed { get; set; } = 10f; // "Damage" per second
     private const int TILE_SIZE = GameConstants.TILE_SIZE; // Must match your other systems
     private readonly float _selectableRange = 124f;
-    public float FuelCostPerSecond { get; } = 2f; // 0.5 fuel per second
+    public float FuelCostPerSecond { get; } = .5f; // 0.5 fuel per second
     public float FuelCostPerClick { get; } = 0f;
 
     public void Update(int ownerId, Vector2 mouseWorldPos, Game world)
@@ -19,7 +20,7 @@ public class DrillTool : ITool
         WorldData worldData = world.WorldData;
         
         // Always clear hover first
-        worldData.HoveredTile = null;
+        worldData.Interaction.HoveredTile = null;
 
         // Get Owner Position
         if (!world.EntityManager.Transforms.TryGetValue(ownerId, out var transform)) return;
@@ -34,13 +35,14 @@ public class DrillTool : ITool
         if (distance > _selectableRange) return;
 
         TileType hoveredType = worldData.GetTileType(hoveredTile.X, hoveredTile.Y);
-        TileDefinition tileDef = worldData.GetTileDef(hoveredType);
+        TileDefinition tileDef = TileRegistry.GetDefinition(hoveredType);
         
         
         // MODE: Looking to pick up (highlight if NOT empty)
         if (tileDef.IsSolid || tileDef.Hardness > 0)
         {
-            worldData.HoveredTile = hoveredTile;
+            worldData.Interaction.HoveredTile = hoveredTile;
+            worldData.Interaction.HoveredColor = new Raylib_cs.Color(50, 50, 150);
         }
     
     }
@@ -65,11 +67,11 @@ public void Use(int ownerId, Vector2 targetWorldPos, float deltaTime, Game world
             
             // 3. Get Tile Info
             TileType tileType = worldData.GetTileType(clickedTile.X, clickedTile.Y);
-            TileDefinition tileDef = worldData.GetTileDef(tileType);
+            TileDefinition tileDef = TileRegistry.GetDefinition(tileType);
             
             // 4. Check if tile is minable
-            if (!tileDef.IsSolid || tileDef.Hardness <= 0) { return; }
-
+            //if (!tileDef.IsSolid || tileDef.Hardness <= 0) { return; }
+            if (!tileDef.DropsResource.HasValue) return;
             // 5. Create and save the NEW mining state
             var miningState = new MiningComponent
             {
@@ -89,6 +91,7 @@ public void Use(int ownerId, Vector2 targetWorldPos, float deltaTime, Game world
             // 2. Apply mining damage
             miningState.CurrentHealth -= MiningSpeed * deltaTime;
 
+
             // 3. Check for tile break
             if (miningState.CurrentHealth <= 0)
             {
@@ -98,21 +101,24 @@ public void Use(int ownerId, Vector2 targetWorldPos, float deltaTime, Game world
                 int tileY = miningState.TargetTileY;
                 TileType tileType = worldData.GetTileType(tileX, tileY); 
                 
-                TileDefinition tileDef = worldData.GetTileDef(tileType);
+                TileDefinition tileDef = TileRegistry.GetDefinition(tileType);
+                AudioManager.PlaySfxDynamic("chip", .4f, .5f);
 
-                // Destroy tile
-                worldData.SetTileType(tileX, tileY, TileType.None);
+                // Changed to not Destroy tile
+                //worldData.SetTileType(tileX, tileY, TileType.None);
+                worldData.Interaction.StartFlash();
                 
                 if (tileDef.DropsResource.HasValue)
                 {
                     // It does! Spawn that resource.
+                    var inventory = entityManager.Inventories[ownerId];
                     ResourceType resource = tileDef.DropsResource.Value;
-                    Vector2 tileCenter = GetWorldPosFromTile(new Point(tileX, tileY), worldData.Yoffset);
-                    world.CreateResourceEntity(tileCenter, resource, 1, tileDef.RenderInfo.Color);
+                    inventory.TryAddItem(resource, 1);
                 }
 
+                miningState.CurrentHealth = tileDef.Hardness;
                 // Stop mining (removes the component)
-                StopUse(ownerId, world);
+                //StopUse(ownerId, world);
             }
             else
             {

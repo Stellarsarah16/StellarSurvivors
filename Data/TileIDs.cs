@@ -1,4 +1,4 @@
-﻿namespace StellarSurvivors.WorldGen.Blueprints;
+﻿namespace StellarSurvivors.Data;
 
 public static class TileIDs
 {

@@ -1,5 +1,5 @@
 ﻿namespace StellarSurvivors.WorldGen;
-using StellarSurvivors.States;
+using StellarSurvivors.Data;
 using StellarSurvivors.Core;
 using System.Collections.Generic;
 using StellarSurvivors.WorldGen.Blueprints;
@@ -12,7 +12,7 @@ public class WorldGenerator
 {
     private List<IGenerationStep> _steps = new List<IGenerationStep>();
     private float _tileSize = GameConstants.TILE_SIZE;
-    private EntityFactory _entityFactory;
+    public EntityFactory EntityFactory;
     
     private Random _random = new Random();
     private const double GOLD_CHANCE = 0.01;
@@ -28,16 +28,16 @@ public class WorldGenerator
         
         int seed = _random.Next();
         
-        _entityFactory = new EntityFactory(world);
-        _entityFactory.Register("grassTile", new GrassTileBlueprint());
-        _entityFactory.Register("waterTile", new WaterTileBlueprint());
-        _entityFactory.Register("dirtTile", new DirtTileBlueprint());
-        _entityFactory.Register("stoneTile", new StoneTileBlueprint());
-        _entityFactory.Register("sandTile", new SandTileBlueprint());
-        _entityFactory.Register("goldTile", new GoldTileBlueprint());
-        _entityFactory.Register("ironTile", new IronTileBlueprint());
-        _entityFactory.Register("coalTile", new CoalTileBlueprint());
-        _entityFactory.Register("hardTile", new HardTileBlueprint());
+        EntityFactory = new EntityFactory(world.EntityManager);
+        EntityFactory.Register("grassTile", new GrassTileBlueprint());
+        EntityFactory.Register("waterTile", new WaterTileBlueprint());
+        EntityFactory.Register("dirtTile", new DirtTileBlueprint());
+        EntityFactory.Register("stoneTile", new StoneTileBlueprint());
+        EntityFactory.Register("sandTile", new SandTileBlueprint());
+        EntityFactory.Register("goldTile", new GoldTileBlueprint());
+        EntityFactory.Register("ironTile", new IronTileBlueprint());
+        EntityFactory.Register("coalTile", new CoalTileBlueprint());
+        EntityFactory.Register("hardTile", new HardTileBlueprint());
         
 
         AddStep(new SurfaceGenerationStep(new PerlinNoiseStrategy()));
@@ -107,7 +107,7 @@ public class WorldGenerator
                         Scale = Vector3.One
                     };
                     // We don't need _random or GOLD_CHANCE here anymore!
-                    int entityId = _entityFactory.CreateMapEntity(blueprintId, settings);
+                    int entityId = EntityFactory.CreateMapEntity(blueprintId, settings);
                 }
             }
 
@@ -116,7 +116,7 @@ public class WorldGenerator
         Vector3 positionAbove = new Vector3(motherShipPosition.X, motherShipPosition.Y - 50, motherShipPosition.Z);
         // Create Player
         Console.WriteLine(positionAbove);
-        var podId = world.CreatePod(
+        var podId = EntityFactory.CreatePod(
             positionAbove,
             new Vector2(144, 144),
             Color.Pink
@@ -182,7 +182,7 @@ public class WorldGenerator
         }
 
         // 4. Create the mothership
-        var mothershipId = _world.CreateMotherShip(
+        var mothershipId = EntityFactory.CreateMotherShip(
             spawnPosition,
             shipSize,
             Color.Purple

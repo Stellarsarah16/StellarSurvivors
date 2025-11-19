@@ -8,7 +8,7 @@ namespace StellarSurvivors.WorldGen.Blueprints
 {
     public class IronTileBlueprint : IEntityBlueprint
     {
-        public void Apply(Game world, int entityId, BlueprintSettings settings)
+        public void Apply(EntityManager entityManager, int entityId, BlueprintSettings settings)
         {
             // This is the "recipe" for a grass tile.
             // It just needs a Transform and a Renderable.
@@ -17,8 +17,9 @@ namespace StellarSurvivors.WorldGen.Blueprints
             var scale = settings.Scale;
             var size = settings.Size; // Size for RenderComponent
             
-            world.EntityManager.Transforms.Add(entityId, new TransformComponent{Position = settings.Position, Rotation = 0, Scale = scale });
-            world.EntityManager.Renderables.Add(entityId, new RenderComponent {Size = size, Color = Color.LightGray, Layer = RenderLayer.Background});
+            entityManager.Transforms.Add(entityId, new TransformComponent{Position = settings.Position, Rotation = 0, Scale = scale });
+            entityManager.Renderables.Add(entityId, new RenderComponent {Size = size, Color = Color.LightGray, Layer = RenderLayer.Background});
+            entityManager.Resources.Add(entityId, new ResourceComponent());
             
             // That's it! It has no Health, no Input, no Velocity.
         }

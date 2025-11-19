@@ -1,6 +1,6 @@
 ﻿namespace StellarSurvivors.Components;
 
-public struct FuelComponent
+public class FuelComponent
 {
     public float CurrentFuel;
     public float RechargeRate;
@@ -12,5 +12,22 @@ public struct FuelComponent
         RechargeRate = fuelRate;
         FuelCapacity = fuelCapacity;
 
+    }
+
+    public bool ConsumeFuel(float amount)
+    {
+        if (amount > CurrentFuel) return false;
+        
+        CurrentFuel -= amount;
+        return true;
+    }
+    
+    public void Refuel(float amount)
+    {
+        CurrentFuel += amount;
+        if (CurrentFuel > FuelCapacity)
+        {
+            CurrentFuel = FuelCapacity;
+        }
     }
 }

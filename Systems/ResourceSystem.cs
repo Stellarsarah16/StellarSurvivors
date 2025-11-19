@@ -24,12 +24,14 @@ public class ResourceSystem
         if (e.EntityA == spacemanId)
         {
             // Entity A is the spaceman, try to pick up B
-            TryPickup(e.EntityA, e.EntityB);
+            // Disabled Pickup
+            //TryPickup(e.EntityA, e.EntityB);
         }
         else if (e.EntityB == spacemanId)
         {
             // Entity B is the spaceman, try to pick up A
-            TryPickup(e.EntityB, e.EntityA);
+            // Disabled Pickup
+            //TryPickup(e.EntityB, e.EntityA);
         }
     }
     
